@@ -188,15 +188,15 @@ def plot_vector(start, end):
 def main():
     json_in = Map("maps/M1.json")
     json_in.plot_map()
+    for point in json_in.dog_start_positions:
+        plt.plot(point[0], point[1], "ro")
+
+    st = json_in.herd_start_position
+    go = json_in.herd_goal_position
+
+    plt.plot(st[0], st[1], "g2")
+    plt.plot(go[0], go[1], "b*")
+
     plt.show()
 
-    # p = [20.2, 2.6] #valid
-    # p = [21.2, 2] #not valid
-    # p = [30, 40] #not valid
-
-    # plt.plot([p[0]],[p[1]], "ro")
-
-    # print("Valid point?:")
-    # print(json_in.valid_point(p))
-
-main()
+#main()
