@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 SHEEP_R = 0.7
 # The space the sheep wants between them
 SPACE_R = SHEEP_R
-RANGE_R = 2 * SPACE_R
+RANGE_R = 3 * SPACE_R
 
 BUMP_h = 0.2  # Value from the paper. Used in the bump function
 A = 5
@@ -14,48 +14,71 @@ C = abs(A-B)/(np.sqrt(4*A*B))
 EPS = 0.1
 
 
-# ---------- The functions from the paper. Used for computing the agent acceleration
-def bump_function(z):
-    if 0 <= z < BUMP_h:
-        return 1
-    if BUMP_h <= z <= 1:
-        div = ((z-BUMP_h)/(1-BUMP_h))
-        cos_term = np.cos(np.pi * ((z-BUMP_h)/(1-BUMP_h)))
-        result = 0.5 * (1 + cos_term)
-        return result
-    return 0
+# ---------- The functions from the paper by Harman. Used for computing the agent acceleration
+
+# Separation
+S = 0.5
+
+K = 0.5
+M = 0.5
 
 
-def sigmoid(z):
-    return 0.5 * ((A + B) * gradient_function(1, z + C) + (A - B))
-
-
-def sigma_norm(z):
-    return (1/EPS) * ((np.sqrt(1 + (EPS * (np.linalg.norm(z)**2)))) - 1)
-
-
-def gradient_function(eps, z):
-    if eps == 1:
-        return z/(np.sqrt(1 + z ** 2))
-    return z / (1 + eps * sigma_norm(z))
-
-
-def adjacency_value(pos_i, pos_j):
-    return bump_function(sigma_norm(pos_j - pos_i)/sigma_norm(RANGE_R))
-
-
-def action_function(z):
+def separation(agent, neighbors):
     """
-
-    :param z: The value
-    :param radius: The vector between the agents, from i to j (pos_i - pos_j)
-    :return: The action function value
+    A function to calculate the separation steer for an agent
+    :param agent: the agent
+    :param neighbors: other agents in the visible set
+    :return:
     """
-    sig_norm = sigma_norm(RANGE_R)
-    sigm = sigmoid(z - SPACE_R)
-    div = z / sig_norm
-    bump = bump_function(z / sig_norm) * sigm
-    return bump
+    s = np.zeros(2)  # separation_steer
+    for neigbor in neighbors:
+        s -= (agent.pos - neigbor.pos)
+    return s
+
+def cohesion(agent, neighbors):
+    """
+    Calculates the cohesion displacement vector fpr the agent
+    :param agent: the agent
+    :param neigbors: other agents in the visible set
+    :return:
+    """
+    c = np.zeros(2)  # center of the visible set
+    for neigbor in neighbors:
+        c += neigbor.pos
+    c /= len(neighbors)
+
+    k = c - agent.pos  # cohesion displacement vector
+
+    return k
+
+
+def alignment(neighbors):
+    """
+    Calculates the alignment (velocity matching)
+    :param agent: the agent
+    :param neighbors:other agents in the visible set
+    :return:
+    """
+    m = np.zeros(2)  # separation_steer
+
+    if len(neighbors) > 0:
+        for neigbor in neighbors:
+            m += neigbor.vel
+        m /= len(neighbors)
+
+    return m
+
+def get_velocity(agent, neighbors):
+    """
+    Returns the new velocity based on the neighbors
+    :param agent:
+    :param neighbors:
+    :return:
+    """
+    s = separation(agent, neighbors)
+    k = cohesion(agent, neighbors)
+    m = alignment(neighbors)
+    return agent.vel + S*s + K*k + M*m
 
 
 class Sheep:
@@ -68,17 +91,9 @@ class Sheep:
     def get_acceleration(self, neighbors):
         # The gradient based term: finding the best position
         # Consensus term: Tries to adapt the velocity to the neighbors
-        # If there are no neighbors we can stop
-        if len(neighbors) == 0:
-            return -self.vel
-        gradient = np.zeros(2)
-        consensus = np.zeros(2)
-        for neighbor in neighbors:
-            gradient += action_function(sigma_norm(neighbor.pos - self.pos)) * \
-                        gradient_function(EPS, neighbor.pos - self.pos) #/ len(neighbors)
-            consensus += adjacency_value(self.pos, neighbor.pos) * (neighbor.vel - self.vel) #/ len(neighbors)
-        acceleration = gradient + consensus
-        return acceleration
+        new_vel = get_velocity(self, neighbors)
+        acc = (new_vel - self.vel)/0.1
+        return acc
 
     def update(self, neighbors):
         # Get the acceleration
@@ -121,11 +136,11 @@ def plot_sheep(sheep):
     plt.pause(0.05)
 
 def test():
-    sheep1 = Sheep(np.array([1.0, 1.0]), np.array([0.0, 0.0]))
-    sheep2 = Sheep(np.array([2.0, 2.0]), np.array([0.0, 0.0]))
-    sheep3 = Sheep(np.array([2.3, 2.3]), np.array([0.0, 0.0]))
-    sheep4 = Sheep(np.array([1.8, 2.0]), np.array([0.0, 0.0]))
-    sheep5 = Sheep(np.array([1.0, 2.0]), np.array([0.0, 0.0]))
+    sheep1 = Sheep(np.array([1.0, 1.0]), np.array([0.1, 0.1]))
+    sheep2 = Sheep(np.array([2.0, 2.0]), np.array([0.1, -0.1]))
+    sheep3 = Sheep(np.array([2.3, 2.3]), np.array([0.1, -0.1]))
+    sheep4 = Sheep(np.array([1.8, 2.0]), np.array([0.1, -0.1]))
+    sheep5 = Sheep(np.array([1.0, 2.0]), np.array([0.1, 0.0]))
 
     sheep_list = [sheep1, sheep2, sheep3, sheep4, sheep5]
 
@@ -144,3 +159,5 @@ def test():
     plt.show()
 
 test()
+
+
