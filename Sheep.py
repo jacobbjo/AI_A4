@@ -91,6 +91,7 @@ class Sheep:
             self.dir = vel/np.linalg.norm(vel)
         self.pos_hist = []
         self.sight_ang = ANGLE_OF_SIGHT
+        self.sight_range = RANGE_R
 
         # Test to not update the sheep directly
         self.next_vel = self.vel
@@ -212,4 +213,4 @@ def test():
 
     plt.show()
 
-test()
+#test()
