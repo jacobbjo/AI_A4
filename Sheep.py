@@ -1,11 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Global variables defining the sheep behavior
+# Global variables defining the sheep properties
 SHEEP_R = 0.7
+ANGLE_OF_SIGHT = 3 * (np.pi / 2)
 # The space the sheep wants between them
 SPACE_R = SHEEP_R
-RANGE_R = 2 * SPACE_R
+RANGE_R = 3 * SPACE_R
 
 BUMP_h = 0.2  # Value from the paper. Used in the bump function
 A = 5
@@ -63,6 +64,11 @@ class Sheep:
         self.radius = SHEEP_R
         self.pos = pos
         self.vel = vel
+        if np.linalg.norm(vel) == 0:
+            rand_pos = np.random.normal(0.5, 0.5, 2)
+            self.dir = rand_pos/np.linalg.norm(rand_pos)
+        else:
+            self.dir = vel/np.linalg.norm(vel)
         self.pos_hist = []
 
     def get_acceleration(self, neighbors):
@@ -92,6 +98,8 @@ class Sheep:
         if np.linalg.norm(self.vel) > 10:
             self.vel /= np.linalg.norm(self.vel)
             self.vel *= 10
+        if np.linalg.norm(self.vel) > 0:
+            self.dir = self.vel / np.linalg.norm(self.vel)
         self.pos_hist.append(self.pos)
         self.pos += self.vel * 0.1
 
