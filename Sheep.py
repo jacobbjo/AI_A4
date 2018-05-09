@@ -70,6 +70,7 @@ class Sheep:
         else:
             self.dir = vel/np.linalg.norm(vel)
         self.pos_hist = []
+        self.sight_ang = ANGLE_OF_SIGHT
 
     def get_acceleration(self, neighbors):
         # The gradient based term: finding the best position
