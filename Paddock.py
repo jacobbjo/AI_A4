@@ -157,20 +157,46 @@ class Paddock:
 
 
 
+def plot_sheep(sheep):
+    plt.clf()
+    plt.plot(0,0,"o")
+    plt.plot(10,0,"o")
+    plt.plot(0,10,"o")
+    plt.plot(10,10,"o")
+    for a_sheep in sheep:
+        # Plots the position
+        plt.plot(a_sheep.pos[0], a_sheep.pos[1], "o")
+
+        # Plot velocity
+        plt.plot([a_sheep.pos[0], a_sheep.vel[0] + a_sheep.pos[0]], [a_sheep.pos[1], a_sheep.vel[1] + a_sheep.pos[1]])
+    plt.pause(0.05)
+
+
+
 kart = Map("maps/M1.json")
 padd = Paddock(kart, 5)
 padd.generate_sheep()
 
 kart.plot_map()
-for sheep in padd.all_sheep:
-    plt.plot(sheep.pos[0], sheep.pos[1], "ro")
-    plt.plot([sheep.pos[0], sheep.dir[0] + sheep.pos[0]], [sheep.pos[1], sheep.dir[1] + sheep.pos[1]])
 
-neighbors = padd.get_neighbors_in_sight(padd.all_sheep[30])
+for i in range(600):
+    print(i)
+    for sheep in padd.all_sheep:
+        neighbors = padd.get_neighbors_in_sight(sheep)
+        sheep.find_new_vel(neighbors, [], [])
 
-plt.plot(padd.all_sheep[30].pos[0], padd.all_sheep[30].pos[1], "b*")
+    for sheep in padd.all_sheep:
+        sheep.update()
+    plot_sheep(padd.all_sheep)
+        #plt.plot(sheep.pos[0], sheep.pos[1], "ro")
+        #plt.plot([sheep.pos[0], sheep.dir[0] + sheep.pos[0]], [sheep.pos[1], sheep.dir[1] + sheep.pos[1]])
 
-for sheep in neighbors:
-    plt.plot(sheep.pos[0], sheep.pos[1], "c*")
+#neighbors = padd.get_neighbors_in_sight(padd.all_sheep[30])
 
-plt.show()
+#plt.plot(padd.all_sheep[30].pos[0], padd.all_sheep[30].pos[1], "b*")
+
+#for sheep in neighbors:
+    #plt.plot(sheep.pos[0], sheep.pos[1], "c*")
+
+#plt.show()
+

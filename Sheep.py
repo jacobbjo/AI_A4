@@ -103,8 +103,8 @@ class Sheep:
 
         # NEED TO ADD CONSTANTS BEFORE GRADIENT AND CONSENSUS, depending on their importance
         # The sheep neighbors
-        if len(neighbors) == len(obstacles) == 0:
-            return -self.vel
+        #if len(neighbors) == len(obstacles) == 0:
+        #    return -self.vel
         gradient = np.zeros(2)
         consensus = np.zeros(2)
         for neighbor in neighbors:
@@ -146,7 +146,7 @@ class Sheep:
     #    self.pos += self.vel * 0.1
 
     def find_new_vel(self, neighbors, obstacles, dogs):
-        new_acc = self.get_acceleration(neighbors, obstacles)
+        new_acc = self.get_acceleration(neighbors, obstacles, dogs)
         if np.linalg.norm(new_acc) > 1:
             # Scale the acc vector
             new_acc /= np.linalg.norm(new_acc)
