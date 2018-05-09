@@ -2,7 +2,7 @@ import numpy as np
 import json
 import matplotlib.pyplot as plt
 
-plt.rcParams['figure.figsize'] = (15, 20)
+plt.rcParams['figure.figsize'] = (16, 9)
 
 class Polygon:
     """Represents a polygon """
@@ -28,22 +28,22 @@ class Polygon:
     def find_limmits(self):
         """Finds the bounding box for the polygon"""
 
-        for vertice in self.vertices:
-            if vertice[0] > self.x_max:
-                self.x_max = vertice[0]
-            if vertice[0] < self.x_min:
-                self.x_min = vertice[0]
+        for vertex in self.vertices:
+            if vertex[0] > self.x_max:
+                self.x_max = vertex[0]
+            if vertex[0] < self.x_min:
+                self.x_min = vertex[0]
 
-            if vertice[1] > self.y_max:
-                self.y_max = vertice[1]
-            if vertice[1] < self.y_min:
-                self.y_min = vertice[1]
+            if vertex[1] > self.y_max:
+                self.y_max = vertex[1]
+            if vertex[1] < self.y_min:
+                self.y_min = vertex[1]
 
     def contain_point(self, point):
         """Determines if the given point is in the polygon or not"""
 
         # If the point is within the bounding box we need to do a raycast to be more precise
-        if (self.point_in_box(point)):
+        if self.point_in_box(point):
             return self.point_in_polygon(point)
 
         return False
@@ -131,8 +131,8 @@ class Map:
                 self.obstacles.append(Polygon(value))
 
         self.bounding_polygon = Polygon(self.data["bounding_polygon"])
-        self.herd_start_position = np.array(self.data["herd_start_position"])
-        self.herd_goal_position = np.array(self.data["herd_goal_position"])
+        self.herd_start_polygon = Polygon(self.data["herd_start_polygon"])
+        self.herd_goal_polygon = Polygon(self.data["herd_goal_polygon"])
         self.dog_start_positions = np.array(self.data["dog_start_positions"])
         self.sheep_n = self.data["sheep_n"]
         self.sheep_r = self.data["sheep_r"]
@@ -170,6 +170,8 @@ class Map:
         plt.axis("equal")
 
         self.bounding_polygon.plot("b")
+        self.herd_start_polygon.plot("g")
+        self.herd_goal_polygon.plot("r")
 
         for obstacle in self.obstacles:
             obstacle.plot("r")
@@ -191,12 +193,7 @@ def main():
     for point in json_in.dog_start_positions:
         plt.plot(point[0], point[1], "ro")
 
-    st = json_in.herd_start_position
-    go = json_in.herd_goal_position
-
-    plt.plot(st[0], st[1], "g2")
-    plt.plot(go[0], go[1], "b*")
-
     plt.show()
 
-main()
+#main()
+
