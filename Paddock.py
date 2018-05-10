@@ -75,10 +75,10 @@ class Paddock:
 
     def get_neighboring_squares(self, position):
         squares = []
+        squares.append(self.get_square(position))
         grid_row = int((position[1] - self.map.bounding_polygon.y_min) // self.square_size)
         grid_col = int((position[0] - self.map.bounding_polygon.x_min) // self.square_size)
 
-        squares.append(self.get_square(position))
         try:
             squares.append(self.grid[grid_row+1][grid_col-1])
         except:
