@@ -61,23 +61,30 @@ class Paddock:
                     self.all_sheep.append(new_sheep)
                     break
 
-
-    def get_square(self, position):
-        """ Returns the grid square containing the given position"""
+    def get_square_index(self, position):
+        """ returns the indices for the grid for the given position """
         grid_row = int((position[1] - self.map.bounding_polygon.y_min) // self.square_size)
         grid_col = int((position[0] - self.map.bounding_polygon.x_min) // self.square_size)
 
         if grid_row < 0 or grid_col < 0 or grid_row > self.grid_rows or grid_col > self.grid_cols:
             raise IndexError("Sheep is out of bounds")
 
+        return [grid_row, grid_col]
 
-        return self.grid[grid_row][grid_col]
+    def get_square(self, position):
+        """ Returns the grid square containing the given position"""
+        ind = self.get_square_index(position)
+        return self.grid[ind[0]][ind[1]]
 
     def get_neighboring_squares(self, position):
         squares = []
-        squares.append(self.get_square(position))
-        grid_row = int((position[1] - self.map.bounding_polygon.y_min) // self.square_size)
-        grid_col = int((position[0] - self.map.bounding_polygon.x_min) // self.square_size)
+
+        ind = self.get_square_index(position)
+
+        grid_row = ind[0]
+        grid_col = ind[1]
+
+        squares.append(self.grid[grid_row][grid_col])
 
         try:
             squares.append(self.grid[grid_row+1][grid_col-1])
@@ -111,8 +118,8 @@ class Paddock:
             squares.append(self.grid[grid_row][grid_col-1])
         except:
             pass
-        return squares
 
+        return squares
 
     def update_grid(self):
         self.grid = [[[] for c in range(self.grid_cols)] for r in range(self.grid_rows)]
@@ -121,7 +128,6 @@ class Paddock:
 
     def get_neighbors_in_sight(self, current_sheep):
         neighbors = []
-
         squares = self.get_neighboring_squares(current_sheep.pos)
 
         for square in squares:
@@ -190,7 +196,7 @@ padd.generate_sheep()
 kart.plot_map()
 print(len(padd.grid))
 print(len(padd.grid[0]))
-print(padd.get_square(np.array([22, -50])))
+print(padd.get_square(np.array([22, -20])))
 
 
 for i in range(600):
