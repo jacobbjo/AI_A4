@@ -66,13 +66,19 @@ class Paddock:
         """ Returns the grid square containing the given position"""
         grid_row = int((position[1] - self.map.bounding_polygon.y_min) // self.square_size)
         grid_col = int((position[0] - self.map.bounding_polygon.x_min) // self.square_size)
+
+        if grid_row < 0 or grid_col < 0 or grid_row > self.grid_rows or grid_col > self.grid_cols:
+            raise IndexError("Sheep is out of bounds")
+
+
         return self.grid[grid_row][grid_col]
 
     def get_neighboring_squares(self, position):
         squares = []
         grid_row = int((position[1] - self.map.bounding_polygon.y_min) // self.square_size)
         grid_col = int((position[0] - self.map.bounding_polygon.x_min) // self.square_size)
-        squares.append(self.grid[grid_row][grid_col])
+
+        squares.append(self.get_square(position))
         try:
             squares.append(self.grid[grid_row+1][grid_col-1])
         except:
@@ -184,21 +190,21 @@ padd.generate_sheep()
 kart.plot_map()
 print(len(padd.grid))
 print(len(padd.grid[0]))
-print(padd.get_square(np.array([22, -10])))
+print(padd.get_square(np.array([22, -50])))
 
 
-#for i in range(600):
-#    print(len(padd.grid))
-#    print(i)
-#    for sheep in padd.all_sheep:
-#        neighbors = padd.get_neighbors_in_sight(sheep)
-#        sheep.find_new_vel(neighbors, [], [])
-#
-#    for sheep in padd.all_sheep:
-#        sheep.update()
-#    plot_sheep(padd.all_sheep, kart)
-#    padd.update_grid()
-#
+for i in range(600):
+    print(len(padd.grid))
+    print(i)
+    for sheep in padd.all_sheep:
+        neighbors = padd.get_neighbors_in_sight(sheep)
+        sheep.find_new_vel(neighbors, [], [])
+
+    for sheep in padd.all_sheep:
+        sheep.update()
+    plot_sheep(padd.all_sheep, kart)
+    padd.update_grid()
+
         #plt.plot(sheep.pos[0], sheep.pos[1], "ro")
         #plt.plot([sheep.pos[0], sheep.dir[0] + sheep.pos[0]], [sheep.pos[1], sheep.dir[1] + sheep.pos[1]])
 
