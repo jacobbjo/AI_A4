@@ -18,11 +18,11 @@ class Paddock:
         self.all_sheep = []
 
         # Create grid, [0][0] is in SW corner of map
-        grid_rows = ceil((self.map.bounding_polygon.y_max - self.map.bounding_polygon.y_min)
-                              / self.square_size)
-        grid_cols = ceil((self.map.bounding_polygon.x_max - self.map.bounding_polygon.x_min)
-                              / self.square_size)
-        self.grid = [[[] for c in range(grid_cols)] for r in range(grid_rows)]
+        self.grid_rows = int(ceil((self.map.bounding_polygon.y_max - self.map.bounding_polygon.y_min)
+                              / self.square_size))
+        self.grid_cols = int(ceil((self.map.bounding_polygon.x_max - self.map.bounding_polygon.x_min)
+                              / self.square_size))
+        self.grid = [[[] for c in range(self.grid_cols)] for r in range(self.grid_rows)]
 
 
     def generate_sheep(self):
@@ -107,6 +107,12 @@ class Paddock:
             pass
         return squares
 
+
+    def update_grid(self):
+        self.grid = [[[] for c in range(self.grid_cols)] for r in range(self.grid_rows)]
+        for sheep in self.all_sheep:
+            self.get_square(sheep.pos).append(sheep)
+
     def get_neighbors_in_sight(self, current_sheep):
         neighbors = []
 
@@ -157,12 +163,10 @@ class Paddock:
 
 
 
-def plot_sheep(sheep):
+def plot_sheep(sheep, the_map):
     plt.clf()
-    plt.plot(0,0,"o")
-    plt.plot(10,0,"o")
-    plt.plot(0,10,"o")
-    plt.plot(10,10,"o")
+    the_map.plot_map()
+
     for a_sheep in sheep:
         # Plots the position
         plt.plot(a_sheep.pos[0], a_sheep.pos[1], "o")
@@ -178,16 +182,23 @@ padd = Paddock(kart, 5)
 padd.generate_sheep()
 
 kart.plot_map()
+print(len(padd.grid))
+print(len(padd.grid[0]))
+print(padd.get_square(np.array([22, -10])))
 
-for i in range(600):
-    print(i)
-    for sheep in padd.all_sheep:
-        neighbors = padd.get_neighbors_in_sight(sheep)
-        sheep.find_new_vel(neighbors, [], [])
 
-    for sheep in padd.all_sheep:
-        sheep.update()
-    plot_sheep(padd.all_sheep)
+#for i in range(600):
+#    print(len(padd.grid))
+#    print(i)
+#    for sheep in padd.all_sheep:
+#        neighbors = padd.get_neighbors_in_sight(sheep)
+#        sheep.find_new_vel(neighbors, [], [])
+#
+#    for sheep in padd.all_sheep:
+#        sheep.update()
+#    plot_sheep(padd.all_sheep, kart)
+#    padd.update_grid()
+#
         #plt.plot(sheep.pos[0], sheep.pos[1], "ro")
         #plt.plot([sheep.pos[0], sheep.dir[0] + sheep.pos[0]], [sheep.pos[1], sheep.dir[1] + sheep.pos[1]])
 
