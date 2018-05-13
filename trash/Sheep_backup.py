@@ -3,10 +3,11 @@ import matplotlib.pyplot as plt
 from importJSON import Map
 
 # Global variables defining the sheep behavior
-SHEEP_R = 0.7
+#SHEEP_R = 0.7
 # The space the sheep wants between them
-SPACE_R = 3* SHEEP_R
-RANGE_R = 3* SHEEP_R
+SPACE_MULT = 3
+SPACE_R = 0.7
+RANGE_R = 3 * SPACE_R
 
 BUMP_h = 0.2  # Value from the paper. Used in the bump function
 A = 5
@@ -18,12 +19,10 @@ EPS = 0.1
 # ---------- The functions from the paper by Harman. Used for computing the agent acceleration
 
 # Separation
-S = 0.5
+S = 0.3
 
-K = 0.2
-M = 0.4
-
-O = 1
+K = 0.4
+M = 0.5
 
 
 def separation(agent, neighbors):
@@ -35,9 +34,7 @@ def separation(agent, neighbors):
     """
     s = np.zeros(2)  # separation_steer
     for neighbor in neighbors:
-        #if np.linalg.norm(neighbor.pos - agent.pos) < SPACE_R:
         s -= (neighbor.pos - agent.pos)
-        #s -= (agent.pos - neighbor.pos)
     return s
 
 def cohesion(agent, neighbors):
@@ -48,16 +45,15 @@ def cohesion(agent, neighbors):
     :return:
     """
     c = np.zeros(2)  # center of the visible set
-    if len(neighbors) > 0:
-        for neigbor in neighbors:
-            c += neigbor.pos
-        c /= len(neighbors)
 
-        k = c - agent.pos  # cohesion displacement vector
+    for neighbor in neighbors:
+        c += neighbor.pos#/len(neighbors)
+    c /= len(neighbors)
 
-        return k
-    else:
-        return c
+    k = c - agent.pos  # cohesion displacement vector
+
+    return k
+
 
 def alignment(neighbors):
     """
@@ -70,13 +66,12 @@ def alignment(neighbors):
 
     if len(neighbors) > 0:
         for neighbor in neighbors:
-            m += neighbor.vel
+            m += neighbor.vel#/len(neighbors)
         m /= len(neighbors)
 
     return m
 
-
-def get_velocity(agent, neighbors, obstacles):
+def get_velocity(agent, neighbors):
     """
     Returns the new velocity based on the neighbors
     :param agent:
@@ -86,21 +81,16 @@ def get_velocity(agent, neighbors, obstacles):
     s = separation(agent, neighbors)
     k = cohesion(agent, neighbors)
     m = alignment(neighbors)
-    if len(obstacles) > 0:
-        o = obstacles[0].vel
-        print(o)
-    else:
-        o = 0
-    return agent.vel + S*s + K*k + M*m + O*o
-    #return agent.vel + O*o
+    return agent.vel + S*s + K*k + M*m
 
 
 class Sheep:
+
     def __init__(self, the_map, pos, vel=np.zeros(2)):
-        self.radius = SHEEP_R
+        self.radius = the_map.sheep_r
+
         self.pos = pos
         self.vel = vel
-
         self.max_vel = the_map.sheep_v_max
         self.max_acc = the_map.sheep_a_max
 
@@ -110,31 +100,24 @@ class Sheep:
         else:
             self.dir = vel / np.linalg.norm(vel)
 
-
         self.pos_hist = []
         self.next_vel = self.vel
 
 
-    def get_acceleration(self, neighbors, obstacles, dt):
+    def get_acceleration(self, neighbors):
         # The gradient based term: finding the best position
         # Consensus term: Tries to adapt the velocity to the neighbors
-        new_vel = get_velocity(self, neighbors, obstacles)
-
-        acc = (new_vel - self.vel)/dt
-        print("Acc ", acc)
+        new_vel = get_velocity(self, neighbors)
+        acc = (new_vel - self.vel)/0.1
         return acc
-        #return new_vel
 
-    def find_new_vel(self, neighbors, obstacles, dogs, dt):
-        new_acc = self.get_acceleration(neighbors, obstacles, dt)
+    def find_new_vel(self, neighbors, close_neighbors,  obstacles, dogs, dt):
+        new_acc = self.get_acceleration(neighbors)
         if np.linalg.norm(new_acc) > self.max_acc:
             # Scale the acc vector
             new_acc /= np.linalg.norm(new_acc)
-            new_acc *= self.max_acc
 
-        self.next_vel = self.vel + new_acc * dt
-        #self.next_vel = self.get_acceleration(neighbors, dt)
-
+        self.next_vel += new_acc * dt
 
         if np.linalg.norm(self.next_vel) > self.max_vel:
             self.next_vel /= np.linalg.norm(self.next_vel)
@@ -171,15 +154,14 @@ def plot_sheep(sheep):
         # Plot velocity
         plt.plot([a_sheep.pos[0], a_sheep.vel[0] + a_sheep.pos[0]], [a_sheep.pos[1], a_sheep.vel[1] + a_sheep.pos[1]])
     plt.pause(0.05)
-    #plt.show()
 
 def test():
     the_map = Map("../maps/M1.json")
-    sheep1 = Sheep(the_map, np.array([1.0, 1.0]), np.array([0.0, 0.0]))
-    sheep2 = Sheep(the_map, np.array([2.0, 2.0]), np.array([-0.0, -0.0]))
-    sheep3 = Sheep(the_map, np.array([2.3, 2.3]), np.array([-0.0, -0.0]))
-    sheep4 = Sheep(the_map, np.array([1.8, 2.0]), np.array([-0.0, -0.0]))
-    sheep5 = Sheep(the_map, np.array([1.0, 2.0]), np.array([1.0, 0]))
+    sheep1 = Sheep(the_map, np.array([1.0, 1.0]), np.array([0.1, 0.1]))
+    sheep2 = Sheep(the_map, np.array([2.0, 2.0]), np.array([0.1, -0.1]))
+    sheep3 = Sheep(the_map, np.array([2.3, 2.3]), np.array([-0.1, -0.1]))
+    sheep4 = Sheep(the_map, np.array([1.8, 2.0]), np.array([-0.1, -0.1]))
+    sheep5 = Sheep(the_map, np.array([1.0, 2.0]), np.array([0.1, 0.0]))
 
     sheep_list = [sheep1, sheep2, sheep3, sheep4, sheep5]
 
@@ -188,10 +170,9 @@ def test():
 
     for timestep in range(1000):
         for sheep in sheep_list:
-            sheep.find_new_vel(find_neighbors(sheep_list, sheep), [], [], [], 0.1)
-
+            sheep.find_new_vel(find_neighbors(sheep_list, sheep), [], [], [], the_map.dt)
         for sheep in sheep_list:
-            sheep.update(0.1)
+            sheep.update(the_map.dt)
 
         plot_sheep([sheep1, sheep2, sheep3, sheep4, sheep5])
 

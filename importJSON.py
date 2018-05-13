@@ -21,7 +21,7 @@ class Polygon:
 
         np_vertices = []
         for vertex in vertices:
-            np_vertices.append(np.array(vertex))
+            np_vertices.append(np.array(vertex, dtype="float64"))
 
         return np_vertices
 
@@ -60,7 +60,7 @@ class Polygon:
         # Cast a ray from the given point to ray_end, a bit outside of the boundries
         ray_end = [self.x_max + 1, self.y_max + 1]
 
-        intersections = 0;
+        intersections = 0
 
         for i in range(len(self.vertices) - 1):
             if self.lines_intersect(self.vertices[i], self.vertices[i - 1], point, ray_end):
@@ -82,7 +82,7 @@ class Polygon:
         o4 = self.orientation(p2, q2, q1)
 
         if o1 != o2 and o3 != o4:
-            return True;
+            return True
 
         return False
 
@@ -138,6 +138,8 @@ class Map:
         self.sheep_r = self.data["sheep_r"]
         self.sheep_a_max = self.data["sheep_a_max"]
         self.sheep_v_max = self.data["sheep_v_max"]
+        self.sheep_sight_ang = np.deg2rad(self.data["sheep_sight_ang"])
+        self.sheep_sight_range = self.data["sheep_sight_range"]
         self.dog_r = self.data["dog_r"]
         self.dog_a_max = self.data["dog_a_max"]
         self.dog_v_max = self.data["dog_v_max"]
