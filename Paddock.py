@@ -3,7 +3,7 @@ import numpy as np
 
 
 from importJSON import Map
-from Sheep2 import Sheep
+from Sheep import Sheep
 
 import matplotlib.pyplot as plt
 
