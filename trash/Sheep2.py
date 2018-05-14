@@ -20,7 +20,7 @@ EPS = 0.1
 # Separation
 S = 0.5
 
-K = 0.2
+K = 0.5
 M = 0.4
 
 O = 1
@@ -88,7 +88,7 @@ def get_velocity(agent, neighbors, obstacles):
     m = alignment(neighbors)
     if len(obstacles) > 0:
         o = obstacles[0].vel
-        print(o)
+        #print(o)
     else:
         o = 0
     return agent.vel + S*s + K*k + M*m + O*o
@@ -121,7 +121,7 @@ class Sheep:
         new_vel = get_velocity(self, neighbors, obstacles)
 
         acc = (new_vel - self.vel)/dt
-        print("Acc ", acc)
+        #print("Acc ", acc)
         return acc
         #return new_vel
 

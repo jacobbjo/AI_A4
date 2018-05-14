@@ -293,7 +293,6 @@ for i in range(600):
     for sheep in padd.all_sheep:
         neighbors = padd.get_neighbors_in_sight(sheep)
         obstacles = padd.get_obstacle_agents(sheep)
-        print(len(obstacles))
         sheep.find_new_vel(neighbors, obstacles, [], padd.map.dt)
 
     for sheep in padd.all_sheep:
