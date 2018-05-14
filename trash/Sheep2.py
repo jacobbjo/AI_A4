@@ -77,8 +77,13 @@ def alignment(neighbors):
 
     return m
 
+def obstacle_avoidance(agent, obstacle_sheep):
+    o = np.zeros(2)
+    if obstacle_sheep is not None:
+        o = obstacle_sheep.vel/np.linalg.norm(agent.pos - obstacle_sheep.pos) * 2
+    return o
 
-def get_velocity(agent, neighbors, obstacles):
+def get_velocity(agent, neighbors, obstacle):
     """
     Returns the new velocity based on the neighbors
     :param agent:
@@ -88,11 +93,12 @@ def get_velocity(agent, neighbors, obstacles):
     s = separation(agent, neighbors)
     k = cohesion(agent, neighbors)
     m = alignment(neighbors)
-    if len(obstacles) > 0:
-        o = obstacles[0].vel
-        #print(o)
-    else:
-        o = 0
+    o = obstacle_avoidance(agent, obstacle)
+    #if len(obstacle) > 0:
+    #    o = obstacles[0].vel
+    #    #print(o)
+    #else:
+    #    o = 0
 
     new_vel = agent.vel + S*s + K*k + M*m + O*o
 
@@ -106,7 +112,7 @@ def get_velocity(agent, neighbors, obstacles):
 
 class Sheep:
     def __init__(self, the_map, pos, vel=np.zeros(2)):
-        self.radius = SHEEP_R
+        self.radius = the_map.sheep_r
         self.pos = pos
         self.vel = vel
 

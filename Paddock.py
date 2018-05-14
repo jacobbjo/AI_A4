@@ -153,20 +153,50 @@ class Paddock:
         obstacles.append(self.map.bounding_polygon)
 
         # The line to compare with the obstacle edge
-        sheep_line = np.array([current_sheep.pos, current_sheep.pos + current_sheep.dir * self.square_size * 3])
+        sheep_collision_line = np.array([current_sheep.pos, current_sheep.pos + current_sheep.dir * self.map.sheep_sight_range*8])
+        point_diff = sheep_collision_line[1] - sheep_collision_line[0]
+
+        normal = np.array([-point_diff[1], point_diff[0]])
+        normal /= np.linalg.norm(normal)
+        normal *= np.linalg.norm(current_sheep.radius)
+
+        sheep_collision_line1 = sheep_collision_line + normal
+        sheep_collision_line2 = sheep_collision_line - normal
+
+
+
 
         # Finds the closest point of intersection from the sheep to each obstacle
         for obstacle in obstacles:
-            min_intersect_point = np.zeros(2)
+            min_intersect_point = None
             min_intersect_point_dist = float("infinity")
             best_vel = np.zeros(2)
 
             for i in range(len(obstacle.vertices)):
                 obs_edge = np.array([obstacle.vertices[i], obstacle.vertices[i-1]])
 
-                if obstacle.lines_intersect(obs_edge[0], obs_edge[1], sheep_line[0], sheep_line[1]):
-                    intersect_point = find_intersecting_point(sheep_line, obs_edge)
+                intersect_point1 = None
+                intersect_point2 = None
+                intersect_point = None
 
+                if obstacle.lines_intersect(obs_edge[0], obs_edge[1], sheep_collision_line1[0], sheep_collision_line1[1]):
+                    intersect_point1 = find_intersecting_point(sheep_collision_line1, obs_edge)
+
+                if obstacle.lines_intersect(obs_edge[0], obs_edge[1], sheep_collision_line2[0], sheep_collision_line2[1]):
+                    intersect_point2 = find_intersecting_point(sheep_collision_line2, obs_edge)
+
+                if intersect_point1 is not None:
+                    intersect_point = intersect_point1
+
+                if intersect_point2 is not None and intersect_point is not None:
+                    # Check the closest
+                    if np.linalg.norm(current_sheep.pos - intersect_point2) < \
+                            np.linalg.norm(current_sheep.pos - intersect_point):
+                        intersect_point = intersect_point2
+                else:
+                    intersect_point = intersect_point2
+
+                if intersect_point is not None:
                     if np.linalg.norm(intersect_point - current_sheep.pos) < self.map.sheep_sight_range*7:
                         if np.linalg.norm(intersect_point - sheep.pos) < min_intersect_point_dist:
                             print("NU SKAPAS ETT SPÖKFÅR")
@@ -195,9 +225,20 @@ class Paddock:
                             best_vel = velocity
                             min_intersect_point_dist = np.linalg.norm(intersect_point - sheep.pos)
 
-                            near_obstacles.append(Sheep(self.map, min_intersect_point, best_vel))
+            if min_intersect_point is not None:
+                near_obstacles.append(Sheep(self.map, min_intersect_point, best_vel))
 
-        return near_obstacles
+        close_sheep = None
+        min_dist_to_obstacle = float("infinity")
+        for obs_sheep in near_obstacles:
+            dist = np.linalg.norm(current_sheep.pos - obs_sheep.pos)
+            if dist < min_dist_to_obstacle:
+                min_dist_to_obstacle = dist
+                close_sheep = obs_sheep
+
+
+
+        return close_sheep
 
     def update_grid(self):
         self.grid = [[[] for c in range(self.grid_cols)] for r in range(self.grid_rows)]
