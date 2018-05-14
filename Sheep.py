@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from importJSON import Map
+from Animal import Animal
 
 # Global variables defining the sheep behavior
 SHEEP_R = 0.7
@@ -110,25 +111,10 @@ def get_velocity(agent, neighbors, obstacle):
     #return agent.vel + O*o
 
 
-class Sheep:
+class Sheep(Animal):
     def __init__(self, the_map, pos, vel=np.zeros(2)):
-        self.radius = the_map.sheep_r
-        self.pos = pos
-        self.vel = vel
-
-        self.max_vel = the_map.sheep_v_max
-        self.max_acc = the_map.sheep_a_max
-
-        if np.linalg.norm(vel) == 0:
-            rand_pos = np.random.normal(0.5, 0.5, 2)
-            self.dir = rand_pos / np.linalg.norm(rand_pos)
-        else:
-            self.dir = vel / np.linalg.norm(vel)
-
-
-        self.pos_hist = []
-        self.next_vel = self.vel
-
+        super().__init__(pos, vel, the_map.sheep_r, the_map.sheep_v_max, the_map.sheep_a_max,
+                         the_map.sheep_sight_range, the_map.sheep_sight_ang)
 
     def get_acceleration(self, neighbors, obstacles, dt):
         # The gradient based term: finding the best position
@@ -136,31 +122,11 @@ class Sheep:
         new_vel = get_velocity(self, neighbors, obstacles)
 
         acc = (new_vel - self.vel)/dt
-        #print("Acc ", acc)
         return acc
-        #return new_vel
 
     def find_new_vel(self, neighbors, obstacles, dogs, dt):
         new_acc = self.get_acceleration(neighbors, obstacles, dt)
-        if np.linalg.norm(new_acc) > self.max_acc:
-            # Scale the acc vector
-            new_acc /= np.linalg.norm(new_acc)
-            new_acc *= self.max_acc
-
-        self.next_vel = self.vel + new_acc * dt
-        #self.next_vel = self.get_acceleration(neighbors, dt)
-
-
-        if np.linalg.norm(self.next_vel) > self.max_vel:
-            self.next_vel /= np.linalg.norm(self.next_vel)
-            self.next_vel *= self.max_vel
-
-    def update(self, dt):
-        self.vel = self.next_vel
-        if np.linalg.norm(self.vel) > 0:
-            self.dir = self.vel / np.linalg.norm(self.vel)
-        self.pos_hist.append(self.pos)
-        self.pos += self.vel * dt
+        self.set_new_vel(new_acc, dt)
 
 
 def find_neighbors(sheep_list, the_sheep):
