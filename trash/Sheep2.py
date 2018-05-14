@@ -18,12 +18,14 @@ EPS = 0.1
 # ---------- The functions from the paper by Harman. Used for computing the agent acceleration
 
 # Separation
-S = 0.5
+
+O = 1
+
+S = 0.8
 
 K = 0.5
 M = 0.4
 
-O = 1
 
 
 def separation(agent, neighbors):
@@ -36,7 +38,7 @@ def separation(agent, neighbors):
     s = np.zeros(2)  # separation_steer
     for neighbor in neighbors:
         #if np.linalg.norm(neighbor.pos - agent.pos) < SPACE_R:
-        s -= (neighbor.pos - agent.pos)
+        s -= (neighbor.pos - agent.pos) / np.linalg.norm(neighbor.pos - agent.pos)
         #s -= (agent.pos - neighbor.pos)
     return s
 
@@ -91,7 +93,14 @@ def get_velocity(agent, neighbors, obstacles):
         #print(o)
     else:
         o = 0
-    return agent.vel + S*s + K*k + M*m + O*o
+
+    new_vel = agent.vel + S*s + K*k + M*m + O*o
+
+    if np.linalg.norm(new_vel) > agent.max_vel:
+        new_vel /= np.linalg.norm(new_vel)
+        new_vel *= agent.max_vel
+
+    return new_vel
     #return agent.vel + O*o
 
 
