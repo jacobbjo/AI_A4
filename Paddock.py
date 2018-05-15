@@ -331,7 +331,7 @@ def plot_animals(sheep, dogs, the_map):
 
 
 
-kart = Map("maps/M1.json")
+kart = Map("maps/M2.json")
 padd = Paddock(kart, 5)
 padd.generate_sheep()
 padd.generate_dogs()
