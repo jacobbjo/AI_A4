@@ -2,7 +2,7 @@ import numpy as np
 
 class Animal:
     def __init__(self, pos, vel, radius, v_max, a_max, sight_range, sight_angle):
-        self.pos = pos
+        self.pos = np.float64(pos)
         self.vel = vel
         self.radius = radius
 
@@ -23,7 +23,7 @@ class Animal:
 
     def update(self, dt):
         self.vel = self.next_vel
-        if np.linalg.norm(self.vel) > 0:
+        if np.linalg.norm(self.vel) > 0.3:
             self.dir = self.vel / np.linalg.norm(self.vel)
         self.pos_hist.append(self.pos)
         self.pos += self.vel * dt

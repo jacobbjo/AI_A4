@@ -101,14 +101,16 @@
       -40
     ]
   ],
-  "sheep_n": 20,
+  "sheep_n": 100,
   "sheep_r": 0.7,
-  "sheep_a_max": 5,
-  "sheep_v_max": 3,
-  "sheep_sight_ang": 270,
+  "sheep_a_max": 3,
+  "sheep_v_max": 10,
+  "sheep_sight_ang": 350,
   "sheep_sight_range": 3,
   "dog_r": 0.3,
   "dog_a_max": 3,
   "dog_v_max": 14,
+  "dog_sight_ang": 180,
+  "dog_sight_range": 5,
   "dt": 0.1
 }

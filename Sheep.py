@@ -21,11 +21,12 @@ EPS = 0.1
 # Separation
 
 O = 1
+F = 1
 
 S = 0.8
 
 K = 0.5
-M = 0.4
+M = 0.2
 
 
 
@@ -62,7 +63,7 @@ def cohesion(agent, neighbors):
     else:
         return c
 
-def alignment(neighbors):
+def alignment(agent, neighbors):
     """
     Calculates the alignment (velocity matching)
     :param agent: the agent
@@ -73,7 +74,7 @@ def alignment(neighbors):
 
     if len(neighbors) > 0:
         for neighbor in neighbors:
-            m += neighbor.vel
+            m += neighbor.vel - agent.vel
         m /= len(neighbors)
 
     return m
@@ -84,7 +85,15 @@ def obstacle_avoidance(agent, obstacle_sheep):
         o = obstacle_sheep.vel/np.linalg.norm(agent.pos - obstacle_sheep.pos) * 2
     return o
 
-def get_velocity(agent, neighbors, obstacle):
+def flee_dogs(agent, dogs):
+    f = np.zeros(2)
+    for dog in dogs:
+        away_vec = agent.pos - dog.pos
+        away_vel = (away_vec/np.linalg.norm(away_vec)) * (agent.max_vel / np.linalg.norm(away_vec))
+        f += away_vel
+    return f
+
+def get_velocity(agent, neighbors, obstacle, dogs):
     """
     Returns the new velocity based on the neighbors
     :param agent:
@@ -93,15 +102,11 @@ def get_velocity(agent, neighbors, obstacle):
     """
     s = separation(agent, neighbors)
     k = cohesion(agent, neighbors)
-    m = alignment(neighbors)
+    m = alignment(agent, neighbors)
     o = obstacle_avoidance(agent, obstacle)
-    #if len(obstacle) > 0:
-    #    o = obstacles[0].vel
-    #    #print(o)
-    #else:
-    #    o = 0
+    f = flee_dogs(agent, dogs)
 
-    new_vel = agent.vel + S*s + K*k + M*m + O*o
+    new_vel = agent.vel + S*s + K*k + M*m + O*o + F*f
 
     if np.linalg.norm(new_vel) > agent.max_vel:
         new_vel /= np.linalg.norm(new_vel)
@@ -116,17 +121,25 @@ class Sheep(Animal):
         super().__init__(pos, vel, the_map.sheep_r, the_map.sheep_v_max, the_map.sheep_a_max,
                          the_map.sheep_sight_range, the_map.sheep_sight_ang)
 
-    def get_acceleration(self, neighbors, obstacles, dt):
+    def get_acceleration(self, neighbors, obstacles, dogs, dt):
         # The gradient based term: finding the best position
         # Consensus term: Tries to adapt the velocity to the neighbors
-        new_vel = get_velocity(self, neighbors, obstacles)
+        new_vel = get_velocity(self, neighbors, obstacles, dogs)
 
         acc = (new_vel - self.vel)/dt
         return acc
 
     def find_new_vel(self, neighbors, obstacles, dogs, dt):
-        new_acc = self.get_acceleration(neighbors, obstacles, dt)
+        near_dogs = self.analyze_dogs(dogs)
+        new_acc = self.get_acceleration(neighbors, obstacles, near_dogs, dt)
         self.set_new_vel(new_acc, dt)
+
+    def analyze_dogs(self, all_dogs):
+        near_dogs = []
+        for dog in all_dogs:
+            if np.linalg.norm(self.pos - dog.pos) < self.sight_range * 2:
+                near_dogs.append(dog)
+        return near_dogs
 
 
 def find_neighbors(sheep_list, the_sheep):
@@ -169,7 +182,7 @@ def test():
 
     for timestep in range(1000):
         for sheep in sheep_list:
-            sheep.find_new_vel(find_neighbors(sheep_list, sheep), [], [], [], 0.1)
+            sheep.find_new_vel(find_neighbors(sheep_list, sheep), [], [], 0.1)
 
         for sheep in sheep_list:
             sheep.update(0.1)

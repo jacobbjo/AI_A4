@@ -4,6 +4,7 @@ import numpy as np
 
 from importJSON import Map
 from Sheep import Sheep
+from Dog import Dog
 
 import matplotlib.pyplot as plt
 
@@ -16,6 +17,7 @@ class Paddock:
         self.map = map
         self.square_size = square_size
         self.all_sheep = []
+        self.all_dogs = []
 
         # Create grid, [0][0] is in SW corner of map
         self.grid_rows = int(ceil((self.map.bounding_polygon.y_max - self.map.bounding_polygon.y_min)
@@ -53,6 +55,11 @@ class Paddock:
                     current_point += step
 
         return dictionary
+
+
+    def generate_dogs(self):
+        for dog_pos in self.map.dog_start_positions:
+            self.all_dogs.append(Dog(self.map, dog_pos, np.array([-3.0, 3.0])))
 
 
     def generate_sheep(self):
@@ -303,7 +310,7 @@ class Paddock:
 
 
 
-def plot_sheep(sheep, the_map):
+def plot_animals(sheep, dogs, the_map):
     plt.clf()
     the_map.plot_map()
 
@@ -314,6 +321,12 @@ def plot_sheep(sheep, the_map):
         # Plot velocity
         plt.plot([a_sheep.pos[0], a_sheep.vel[0] + a_sheep.pos[0]], [a_sheep.pos[1], a_sheep.vel[1] + a_sheep.pos[1]])
         plt.plot([a_sheep.pos[0], a_sheep.dir[0] + a_sheep.pos[0]], [a_sheep.pos[1], a_sheep.dir[1] + a_sheep.pos[1]])
+
+    for dog in dogs:
+        plt.plot(dog.pos[0], dog.pos[1], "ro")
+        plt.plot([dog.pos[0], dog.vel[0] + dog.pos[0]], [dog.pos[1], dog.vel[1] + dog.pos[1]])
+        plt.plot([dog.pos[0], dog.dir[0] + dog.pos[0]], [dog.pos[1], dog.dir[1] + dog.pos[1]])
+
     plt.pause(0.05)
 
 
@@ -321,6 +334,7 @@ def plot_sheep(sheep, the_map):
 kart = Map("maps/M1.json")
 padd = Paddock(kart, 5)
 padd.generate_sheep()
+padd.generate_dogs()
 
 kart.plot_map()
 print(len(padd.grid))
@@ -331,16 +345,23 @@ print("---------------------------------------")
 
 
 
-for i in range(600):
+for i in range(1000):
     print("Timestep ",i)
     for sheep in padd.all_sheep:
         neighbors = padd.get_neighbors_in_sight(sheep)
         obstacles = padd.get_obstacle_agents(sheep)
-        sheep.find_new_vel(neighbors, obstacles, [], padd.map.dt)
+        sheep.find_new_vel(neighbors, obstacles, padd.all_dogs, padd.map.dt)
+
+    for dog in padd.all_dogs:
+        dog.find_new_vel(padd.all_obstacles, padd.map.dt)
 
     for sheep in padd.all_sheep:
         sheep.update(padd.map.dt)
-    plot_sheep(padd.all_sheep, kart)
+
+    for dog in padd.all_dogs:
+        dog.update(padd.map.dt)
+
+    plot_animals(padd.all_sheep, padd.all_dogs, kart)
     padd.update_grid()
 
         #plt.plot(sheep.pos[0], sheep.pos[1], "ro")
