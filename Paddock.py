@@ -262,8 +262,8 @@ class Paddock:
             for sheep in square:
 
 
-                if np.linalg.norm(sheep.pos - current_sheep.pos) < self.map.sheep_r*2  and not sheep == current_sheep:
-                    print("SHEEP COLLISION")
+                #if np.linalg.norm(sheep.pos - current_sheep.pos) < self.map.sheep_r*2  and not sheep == current_sheep:
+                #    print("SHEEP COLLISION")
 
                 if self.in_range(current_sheep, sheep) and not sheep == current_sheep:
                     neighbors.append(sheep)
@@ -346,20 +346,24 @@ padd = Paddock(kart, 5)
 padd.generate_sheep()
 padd.generate_dogs()
 
+# Creates the plot objects
 figure = kart.plot_map()
 
+# The sheep and dog dots
 plot_sheep = [plt.plot(sheep.pos[0], sheep.pos[1], "bo",  animated=True)[0] for sheep in padd.all_sheep]
 plot_dogs = [plt.plot(dog.pos[0], dog.pos[1], "ro",  animated=True)[0] for dog in padd.all_dogs]
 
+# The direction for the sheep and dogs
 sheep_dir = [plt.plot([sheep.pos[0], sheep.dir[0] + sheep.pos[0]], [sheep.pos[1], sheep.dir[1] + sheep.pos[1]], "b",
                       animated=True)[0] for sheep in padd.all_sheep]
-dog_dir = [plt.plot([dog.pos[0], dog.dir[0] + dog.pos[0]], [dog.pos[1], dog.dir[1] + dog.pos[1]], "r",
-                      animated=True)[0] for dog in padd.all_dogs]
+dog_dir = [plt.plot([dog.pos[0], dog.dir[0] + dog.pos[0]], [dog.pos[1], dog.dir[1] + dog.pos[1]], "r", animated=True)[0]
+           for dog in padd.all_dogs]
 
+# The velocity for the sheep and dogs
 sheep_vel = [plt.plot([sheep.pos[0], sheep.vel[0] + sheep.pos[0]], [sheep.pos[1], sheep.vel[1] + sheep.pos[1]], "g",
                       animated=True)[0] for sheep in padd.all_sheep]
-dog_vel = [plt.plot([dog.pos[0], dog.vel[0] + dog.pos[0]], [dog.pos[1], dog.vel[1] + dog.pos[1]], "g",
-                      animated=True)[0] for dog in padd.all_dogs]
+dog_vel = [plt.plot([dog.pos[0], dog.vel[0] + dog.pos[0]], [dog.pos[1], dog.vel[1] + dog.pos[1]], "g", animated=True)[0]
+           for dog in padd.all_dogs]
 
 
 animate_objects = plot_sheep + plot_dogs + sheep_dir + dog_dir + sheep_vel + dog_vel
