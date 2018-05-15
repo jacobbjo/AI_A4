@@ -109,7 +109,6 @@ class Animal:
                 if intersect_point is not None:
                     if np.linalg.norm(intersect_point - self.pos) < self.sight_range*7:
                         if np.linalg.norm(intersect_point - self.pos) < min_intersect_point_dist:
-                            print("NU SKAPAS ETT SPÖKFÅR")
 
                             point_diff = obs_edge[1] - obs_edge[0]
 
