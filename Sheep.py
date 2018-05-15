@@ -28,94 +28,6 @@ S = 0.8
 K = 0.5
 M = 0.2
 
-
-
-def separation(agent, neighbors):
-    """
-    A function to calculate the separation steer for an agent
-    :param agent: the agent
-    :param neighbors: other agents in the visible set
-    :return:
-    """
-    s = np.zeros(2)  # separation_steer
-    for neighbor in neighbors:
-        #if np.linalg.norm(neighbor.pos - agent.pos) < SPACE_R:
-        s -= (neighbor.pos - agent.pos) / np.linalg.norm(neighbor.pos - agent.pos)
-        #s -= (agent.pos - neighbor.pos)
-    return s
-
-def cohesion(agent, neighbors):
-    """
-    Calculates the cohesion displacement vector fpr the agent
-    :param agent: the agent
-    :param neigbors: other agents in the visible set
-    :return:
-    """
-    c = np.zeros(2)  # center of the visible set
-    if len(neighbors) > 0:
-        for neigbor in neighbors:
-            c += neigbor.pos
-        c /= len(neighbors)
-
-        k = c - agent.pos  # cohesion displacement vector
-
-        return k
-    else:
-        return c
-
-def alignment(agent, neighbors):
-    """
-    Calculates the alignment (velocity matching)
-    :param agent: the agent
-    :param neighbors:other agents in the visible set
-    :return:
-    """
-    m = np.zeros(2)  # separation_steer
-
-    if len(neighbors) > 0:
-        for neighbor in neighbors:
-            m += neighbor.vel - agent.vel
-        m /= len(neighbors)
-
-    return m
-
-def obstacle_avoidance(agent, obstacle_sheep):
-    o = np.zeros(2)
-    if obstacle_sheep is not None:
-        o = obstacle_sheep.vel/np.linalg.norm(agent.pos - obstacle_sheep.pos) * 2
-    return o
-
-def flee_dogs(agent, dogs):
-    f = np.zeros(2)
-    for dog in dogs:
-        away_vec = agent.pos - dog.pos
-        away_vel = (away_vec/np.linalg.norm(away_vec)) * (agent.max_vel / np.linalg.norm(away_vec))
-        f += away_vel
-    return f
-
-def get_velocity(agent, neighbors, obstacle, dogs):
-    """
-    Returns the new velocity based on the neighbors
-    :param agent:
-    :param neighbors:
-    :return:
-    """
-    s = separation(agent, neighbors)
-    k = cohesion(agent, neighbors)
-    m = alignment(agent, neighbors)
-    o = obstacle_avoidance(agent, obstacle)
-    f = flee_dogs(agent, dogs)
-
-    new_vel = agent.vel + S*s + K*k + M*m + O*o + F*f
-
-    if np.linalg.norm(new_vel) > agent.max_vel:
-        new_vel /= np.linalg.norm(new_vel)
-        new_vel *= agent.max_vel
-
-    return new_vel
-    #return agent.vel + O*o
-
-
 class Sheep(Animal):
     def __init__(self, the_map, pos, vel=np.zeros(2)):
         super().__init__(pos, vel, the_map.sheep_r, the_map.sheep_v_max, the_map.sheep_a_max,
@@ -124,7 +36,7 @@ class Sheep(Animal):
     def get_acceleration(self, neighbors, obstacles, dogs, dt):
         # The gradient based term: finding the best position
         # Consensus term: Tries to adapt the velocity to the neighbors
-        new_vel = get_velocity(self, neighbors, obstacles, dogs)
+        new_vel = self.get_velocity(neighbors, obstacles, dogs)
 
         acc = (new_vel - self.vel)/dt
         return acc
@@ -137,9 +49,93 @@ class Sheep(Animal):
     def analyze_dogs(self, all_dogs):
         near_dogs = []
         for dog in all_dogs:
-            if np.linalg.norm(self.pos - dog.pos) < self.sight_range * 2:
+            if np.linalg.norm(self.pos - dog.pos) < self.sight_range * 3:
                 near_dogs.append(dog)
         return near_dogs
+
+    def separation(self, neighbors):
+        """
+        A function to calculate the separation steer for an agent
+        :param self: the agent
+        :param neighbors: other agents in the visible set
+        :return:
+        """
+        s = np.zeros(2)  # separation_steer
+        for neighbor in neighbors:
+            # if np.linalg.norm(neighbor.pos - agent.pos) < SPACE_R:
+            s -= (neighbor.pos - self.pos) / np.linalg.norm(neighbor.pos - self.pos)
+            # s -= (agent.pos - neighbor.pos)
+        return s
+
+    def cohesion(self, neighbors):
+        """
+        Calculates the cohesion displacement vector fpr the agent
+        :param self: the agent
+        :param neigbors: other agents in the visible set
+        :return:
+        """
+        c = np.zeros(2)  # center of the visible set
+        if len(neighbors) > 0:
+            for neigbor in neighbors:
+                c += neigbor.pos
+            c /= len(neighbors)
+
+            k = c - self.pos  # cohesion displacement vector
+
+            return k
+        else:
+            return c
+
+    def alignment(self, neighbors):
+        """
+        Calculates the alignment (velocity matching)
+        :param self: the agent
+        :param neighbors:other agents in the visible set
+        :return:
+        """
+        m = np.zeros(2)  # separation_steer
+
+        if len(neighbors) > 0:
+            for neighbor in neighbors:
+                m += neighbor.vel - self.vel
+            m /= len(neighbors)
+
+        return m
+
+    def obstacle_avoidance(self, obstacle_sheep):
+        o = np.zeros(2)
+        if obstacle_sheep is not None:
+            o = obstacle_sheep.vel / np.linalg.norm(self.pos - obstacle_sheep.pos) * 2
+        return o
+
+    def flee_dogs(self, dogs):
+        f = np.zeros(2)
+        for dog in dogs:
+            away_vec = self.pos - dog.pos
+            away_vel = (away_vec / np.linalg.norm(away_vec)) * (self.max_vel / np.linalg.norm(away_vec))
+            f += away_vel
+        return f
+
+    def get_velocity(self, neighbors, obstacle, dogs):
+        """
+        Returns the new velocity based on the neighbors
+        :param self:
+        :param neighbors:
+        :return:
+        """
+        s = self.separation(neighbors)
+        k = self.cohesion(neighbors)
+        m = self.alignment(neighbors)
+        o = self.obstacle_avoidance(obstacle)
+        f = self.flee_dogs(dogs)
+
+        new_vel = self.vel + S * s + K * k + M * m + O * o + F * f
+
+        if np.linalg.norm(new_vel) > self.max_vel:
+            new_vel /= np.linalg.norm(new_vel)
+            new_vel *= self.max_vel
+
+        return new_vel
 
 
 def find_neighbors(sheep_list, the_sheep):
