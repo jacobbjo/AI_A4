@@ -1,12 +1,13 @@
 from math import *
 import numpy as np
 
-
 from importJSON import Map
 from Sheep import Sheep
 from Dog import Dog
 
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
 
 plt.rcParams['figure.figsize'] = (16, 9)
 
@@ -208,7 +209,6 @@ class Paddock:
                 if intersect_point is not None:
                     if np.linalg.norm(intersect_point - current_sheep.pos) < self.map.sheep_sight_range*7:
                         if np.linalg.norm(intersect_point - current_sheep.pos) < min_intersect_point_dist:
-                            print("NU SKAPAS ETT SPÖKFÅR")
 
                             point_diff = obs_edge[1] - obs_edge[0]
 
@@ -308,71 +308,65 @@ class Paddock:
         else:
             return False
 
+    def update(self):
+        for sheep in self.all_sheep:
+            neighbors = self.get_neighbors_in_sight(sheep)
+            obstacles = self.get_obstacle_agents(sheep)
+            sheep.find_new_vel(neighbors, obstacles, self.all_dogs, self.map.dt)
+
+        for dog in self.all_dogs:
+            dog.find_new_vel(self.all_obstacles, self.map.dt)
+
+        for sheep in self.all_sheep:
+            sheep.update(self.map.dt)
+
+        for dog in self.all_dogs:
+            dog.update(self.map.dt)
+
+        self.update_grid()
+
+def animate(i):
+    print("i:", i)
+
+    for ind, animal in enumerate(all_animals):
+        animate_objects[ind].set_xdata(animal.pos[0])
+        animate_objects[ind].set_ydata(animal.pos[1])
+        animate_objects[ind+len(all_animals)].set_xdata([animal.pos[0], animal.dir[0] + animal.pos[0]])
+        animate_objects[ind+len(all_animals)].set_ydata([animal.pos[1], animal.dir[1] + animal.pos[1]])
+        animate_objects[ind+2*len(all_animals)].set_xdata([animal.pos[0], animal.vel[0] + animal.pos[0]])
+        animate_objects[ind+2*len(all_animals)].set_ydata([animal.pos[1], animal.vel[1] + animal.pos[1]])
+
+    padd.update()
+
+    return animate_objects
 
 
-def plot_animals(sheep, dogs, the_map):
-    plt.clf()
-    the_map.plot_map()
-
-    for a_sheep in sheep:
-        # Plots the position
-        plt.plot(a_sheep.pos[0], a_sheep.pos[1], "o")
-
-        # Plot velocity
-        plt.plot([a_sheep.pos[0], a_sheep.vel[0] + a_sheep.pos[0]], [a_sheep.pos[1], a_sheep.vel[1] + a_sheep.pos[1]])
-        plt.plot([a_sheep.pos[0], a_sheep.dir[0] + a_sheep.pos[0]], [a_sheep.pos[1], a_sheep.dir[1] + a_sheep.pos[1]])
-
-    for dog in dogs:
-        plt.plot(dog.pos[0], dog.pos[1], "ro")
-        plt.plot([dog.pos[0], dog.vel[0] + dog.pos[0]], [dog.pos[1], dog.vel[1] + dog.pos[1]])
-        plt.plot([dog.pos[0], dog.dir[0] + dog.pos[0]], [dog.pos[1], dog.dir[1] + dog.pos[1]])
-
-    plt.pause(0.05)
-
-
-
-kart = Map("maps/M2.json")
+kart = Map("maps/M1.json")
 padd = Paddock(kart, 5)
 padd.generate_sheep()
 padd.generate_dogs()
 
-kart.plot_map()
-print(len(padd.grid))
-print(len(padd.grid[0]))
-print("---------------------------------------")
-print(padd.get_square_index(np.array([18, 27])))
-print("---------------------------------------")
+figure = kart.plot_map()
+
+plot_sheep = [plt.plot(sheep.pos[0], sheep.pos[1], "bo",  animated=True)[0] for sheep in padd.all_sheep]
+plot_dogs = [plt.plot(dog.pos[0], dog.pos[1], "ro",  animated=True)[0] for dog in padd.all_dogs]
+
+sheep_dir = [plt.plot([sheep.pos[0], sheep.dir[0] + sheep.pos[0]], [sheep.pos[1], sheep.dir[1] + sheep.pos[1]], "b",
+                      animated=True)[0] for sheep in padd.all_sheep]
+dog_dir = [plt.plot([dog.pos[0], dog.dir[0] + dog.pos[0]], [dog.pos[1], dog.dir[1] + dog.pos[1]], "r",
+                      animated=True)[0] for dog in padd.all_dogs]
+
+sheep_vel = [plt.plot([sheep.pos[0], sheep.vel[0] + sheep.pos[0]], [sheep.pos[1], sheep.vel[1] + sheep.pos[1]], "g",
+                      animated=True)[0] for sheep in padd.all_sheep]
+dog_vel = [plt.plot([dog.pos[0], dog.vel[0] + dog.pos[0]], [dog.pos[1], dog.vel[1] + dog.pos[1]], "g",
+                      animated=True)[0] for dog in padd.all_dogs]
 
 
+animate_objects = plot_sheep + plot_dogs + sheep_dir + dog_dir + sheep_vel + dog_vel
+all_animals = padd.all_sheep + padd.all_dogs
+all_dirs = sheep_dir + dog_dir
 
-for i in range(1000):
-    print("Timestep ",i)
-    for sheep in padd.all_sheep:
-        neighbors = padd.get_neighbors_in_sight(sheep)
-        obstacles = padd.get_obstacle_agents(sheep)
-        sheep.find_new_vel(neighbors, obstacles, padd.all_dogs, padd.map.dt)
 
-    for dog in padd.all_dogs:
-        dog.find_new_vel(padd.all_obstacles, padd.map.dt)
-
-    for sheep in padd.all_sheep:
-        sheep.update(padd.map.dt)
-
-    for dog in padd.all_dogs:
-        dog.update(padd.map.dt)
-
-    plot_animals(padd.all_sheep, padd.all_dogs, kart)
-    padd.update_grid()
-
-        #plt.plot(sheep.pos[0], sheep.pos[1], "ro")
-        #plt.plot([sheep.pos[0], sheep.dir[0] + sheep.pos[0]], [sheep.pos[1], sheep.dir[1] + sheep.pos[1]])
-
-#neighbors = padd.get_neighbors_in_sight(padd.all_sheep[30])
-
-#plt.plot(padd.all_sheep[30].pos[0], padd.all_sheep[30].pos[1], "b*")
-
-#for sheep in neighbors:
-    #plt.plot(sheep.pos[0], sheep.pos[1], "c*")
-
-#plt.show()
+ani = animation.FuncAnimation(figure, animate, interval=0, blit=True)
+plt.show()
 

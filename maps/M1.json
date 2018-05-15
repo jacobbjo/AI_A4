@@ -112,5 +112,5 @@
   "dog_v_max": 14,
   "dog_sight_ang": 180,
   "dog_sight_range": 5,
-  "dt": 0.1
+  "dt": 0.05
 }

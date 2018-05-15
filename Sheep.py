@@ -23,10 +23,10 @@ EPS = 0.1
 O = 1
 F = 1
 
-S = 0.8
+S = 0.7
 
 K = 0.5
-M = 0.2
+M = 0.4
 
 class Sheep(Animal):
     def __init__(self, the_map, pos, vel=np.zeros(2)):

@@ -106,15 +106,15 @@ class Polygon:
         else:
             return 2  # counterclockwise
 
-    def plot(self, col):
+    def plot(self, fig, col):
 
         for i in range(len(self.vertices) - 1):
             # print(self.vertices[i])
             v1 = self.vertices[i]
             v2 = self.vertices[i + 1]
-            plt.plot([v1[0], v2[0]], [v1[1], v2[1]], color=col)
+            fig.plot([v1[0], v2[0]], [v1[1], v2[1]], color=col)
 
-        plt.plot([v2[0], self.vertices[0][0]],
+        fig.plot([v2[0], self.vertices[0][0]],
                  [v2[1], self.vertices[0][1]], color=col)
 
 
@@ -170,15 +170,17 @@ class Map:
     def plot_map(self):
         """Plots the border polygon and the obstacle polygons together
         with start and goal positions and velocities."""
+        fig, axes= plt.subplots()
+        axes.axis("equal")
 
-        plt.axis("equal")
-
-        self.bounding_polygon.plot("b")
-        self.herd_start_polygon.plot("g")
-        self.herd_goal_polygon.plot("r")
+        self.bounding_polygon.plot(axes, "b")
+        self.herd_start_polygon.plot(axes, "g")
+        self.herd_goal_polygon.plot(axes, "r")
 
         for obstacle in self.obstacles:
-            obstacle.plot("r")
+            obstacle.plot(axes, "r")
+
+        return fig
 
 
 def plot_vector(start, end):
@@ -193,9 +195,9 @@ def plot_vector(start, end):
 
 def main():
     json_in = Map("maps/M1.json")
-    json_in.plot_map()
+    fig = json_in.plot_map()
     for point in json_in.dog_start_positions:
-        plt.plot(point[0], point[1], "ro")
+        fig.plot(point[0], point[1], "ro")
 
     plt.show()
 
