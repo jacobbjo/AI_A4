@@ -173,6 +173,21 @@ class Paddock:
                 current_max_pos = sheep.pos
         self.lost_sheep_pos = current_max_pos
 
+    def arc_following(self, herd_center, goal_center, arc_radius, arc_angle):
+        middle_line = self.map.herd_goal_center - self.sheep_middle_point
+        middle_line_ang = atan2(middle_line[1], middle_line[0])  # the angle to the x-axis from middle line
+        dog_sector_ang = self.map.dog_chase_arc_ang / len(self.all_dogs)
+        right_bound = middle_line_ang - (self.map.dog_chase_arc_ang / 2)
+
+        for ind, dog in enumerate(self.all_dogs):
+            dog.right_bound = right_bound + (dog_sector_ang * ind)
+            dog.left_bound = right_bound + (dog_sector_ang * (ind + 1))
+
+
+def give_angle(arc_length, radius):
+    angle = arc_length/radius
+    return angle
+
 
 def animate(i):
     print("i:", i)
