@@ -1,7 +1,9 @@
 import numpy as np
 from Animal import Animal
+from math import *
 
-
+O = 1
+H = 0.5
 
 
 class Dog(Animal):
@@ -9,17 +11,23 @@ class Dog(Animal):
     def __init__(self, the_map, position, velocity = np.zeros(2)):
         super().__init__(position, velocity, the_map.dog_r, the_map.dog_v_max, the_map.dog_a_max,
                          the_map.dog_sight_range, the_map.dog_sight_ang)
+
         self.right_bound = 0
         self.left_bound = 0
+        self.within_bounds = False
+        self.towards_right = True
 
-        towards_right = True
+        self.current_herd_middle_point = np.zeros(2)
+        self.herding_velocity = np.zeros(2)
 
 
     def get_acceleration(self, obstacles, dt):
         """Finds the new acceleration"""
         obstacle = self.get_obstacle_agents(obstacles)
         o = self.obstacle_avoidance(obstacle)
-        new_vel = self.vel + o
+
+        new_vel = self.vel + O*o + H * self.herding_velocity
+
         if np.linalg.norm(new_vel) > self.max_vel:
             new_vel /= np.linalg.norm(new_vel)
             new_vel *= self.max_vel
@@ -38,6 +46,67 @@ class Dog(Animal):
         if obstacle_sheep is not None:
             o = obstacle_sheep.vel / np.linalg.norm(self.pos - obstacle_sheep.pos) * 2
         return o
+
+    def set_herding_vel(self, right_bound, left_bound, herd_middle_point, radius):
+        """Sets the herding velocity for the dog. If inside of its bounds, goes towards the arc and end point,
+        else goes towards the nearest bound """
+        self.right_bound = right_bound
+        self.left_bound = left_bound
+        self.current_herd_middle_point = herd_middle_point
+
+        middle_dog_vec = self.pos - self.current_herd_middle_point
+        dog_ang = atan2(middle_dog_vec[1], middle_dog_vec[0])
+        dog_dist_to_middle = np.linalg.norm(middle_dog_vec)
+
+        bound_point_R = radius * np.array([cos(right_bound), sin(right_bound)])
+        bound_point_L = radius * np.array([cos(left_bound), sin(left_bound)])
+
+        self.within_bounds = self.is_withing_angles(right_bound, left_bound, dog_ang)
+
+        if self.within_bounds:
+            out_vel = (radius - dog_dist_to_middle) * (middle_dog_vec / dog_dist_to_middle)
+            out_vel /= np.linalg.norm(out_vel)
+
+            if self.towards_right:
+                dog_bound_point_vec = bound_point_R - self.pos
+            else:
+                dog_bound_point_vec = bound_point_L - self.pos
+
+            dog_bound_point_vec /= np.linalg.norm(dog_bound_point_vec)
+
+            herding_vel = out_vel + dog_bound_point_vec
+
+
+        else:
+
+            dog_bound_R_vec = bound_point_R - self.pos
+            dog_bound_L_vec = bound_point_L - self.pos
+
+            if np.linalg.norm(dog_bound_R_vec) < np.linalg.norm(dog_bound_L_vec):
+                herding_vel = dog_bound_R_vec
+            else:
+                herding_vel = dog_bound_L_vec
+
+        herding_vel /= np.linalg.norm(herding_vel)
+        herding_vel *= self.max_vel/5
+        self.herding_velocity = herding_vel
+
+    def update(self, dt):
+        super().update(dt)  # Updates the new position
+
+        # Checks if the position is outside of the bounds
+        middle_dog_vec = self.pos - self.current_herd_middle_point
+        dog_ang = atan2(middle_dog_vec[1], middle_dog_vec[0])
+
+        if self.within_bounds and not self.is_withing_angles(self.right_bound, self.left_bound, dog_ang):
+            self.towards_right = not self.towards_right
+
+
+
+
+
+
+
 
 
 

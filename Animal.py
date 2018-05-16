@@ -143,3 +143,25 @@ class Animal:
 
         return close_animal
 
+
+    def is_withing_angles(self, right_ang, left_ang, vec_ang):
+
+        if right_ang < 0:
+            right_ang += (2 * np.pi)
+
+        if left_ang < 0:
+            left_ang += (2 * np.pi)
+
+        if vec_ang < 0:
+            vec_ang += (2 * np.pi)
+
+        if right_ang > left_ang:
+            # The velocity need to be larger than left and smaller than right
+            return not left_ang < vec_ang < right_ang
+
+        # If/else to prevent from false negative when right_ang < left_ang < vel_ang
+        if right_ang <= vec_ang <= left_ang:
+            return True
+        else:
+            return False
+

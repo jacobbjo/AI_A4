@@ -150,6 +150,7 @@ class Paddock:
         for sheep in self.all_sheep:
             sheep.find_new_vel(padd.get_neighboring_squares(sheep.pos), padd.all_obstacles, self.all_dogs, self.map.dt)
 
+        self.arc_following()
         for dog in self.all_dogs:
             dog.find_new_vel(self.all_obstacles, self.map.dt)
 
@@ -173,15 +174,25 @@ class Paddock:
                 current_max_pos = sheep.pos
         self.lost_sheep_pos = current_max_pos
 
-    def arc_following(self, herd_center, goal_center, arc_radius, arc_angle):
-        middle_line = self.map.herd_goal_center - self.sheep_middle_point
+    def arc_following(self):
+        radius = np.linalg.norm(self.sheep_middle_point - self.lost_sheep_pos) * 1.1
+        middle_line = self.sheep_middle_point - self.map.herd_goal_center
+
         middle_line_ang = atan2(middle_line[1], middle_line[0])  # the angle to the x-axis from middle line
+
         dog_sector_ang = self.map.dog_chase_arc_ang / len(self.all_dogs)
-        right_bound = middle_line_ang - (self.map.dog_chase_arc_ang / 2)
+
+        tot_right_bound = middle_line_ang + (self.map.dog_chase_arc_ang / 2)
 
         for ind, dog in enumerate(self.all_dogs):
-            dog.right_bound = right_bound + (dog_sector_ang * ind)
-            dog.left_bound = right_bound + (dog_sector_ang * (ind + 1))
+
+            right_bound = tot_right_bound - (dog_sector_ang * ind)
+            left_bound = tot_right_bound - (dog_sector_ang * (ind + 1))
+
+            dog.set_herding_vel(right_bound, left_bound, self.sheep_middle_point, radius)
+
+
+
 
 
 def give_angle(arc_length, radius):

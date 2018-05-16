@@ -78,6 +78,7 @@ class Sheep(Animal):
         vec_ab = sheep_b.pos - self.pos
 
         if np.linalg.norm(vec_ab) < sight_range:
+
             sheep_a_ang = atan2(self.dir[1], self.dir[0])
             vec_ab_ang = atan2(vec_ab[1], vec_ab[0])  # The angle from the x-axis to vec_ab
 
@@ -85,24 +86,8 @@ class Sheep(Animal):
             right_ang = sheep_a_ang - sight_ang/2
             left_ang = sheep_a_ang + sight_ang/2
 
-            if right_ang < 0:
-                right_ang += (2*np.pi)
+            return self.is_withing_angles(right_ang, left_ang, vec_ab_ang)
 
-            if left_ang < 0:
-                left_ang += (2*np.pi)
-
-            if vec_ab_ang < 0:
-                vec_ab_ang += (2*np.pi)
-
-            if right_ang > left_ang:
-                # The velocity need to be larger than left and smaller than right
-                return not left_ang < vec_ab_ang < right_ang
-
-            # If/else to prevent from false negative when right_ang < left_ang < vel_ang
-            if right_ang <= vec_ab_ang <= left_ang:
-                return True
-            else:
-                return False
         else:
             return False
 
