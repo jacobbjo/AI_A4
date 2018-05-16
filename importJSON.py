@@ -145,6 +145,7 @@ class Map:
         self.dog_v_max = self.data["dog_v_max"]
         self.dog_sight_ang = np.deg2rad(self.data["dog_sight_ang"])
         self.dog_sight_range = self.data["dog_sight_range"]
+        self.dog_chase_arc_ang = self.data["dog_chase_arc_ang"]
         self.dt = self.data["dt"]
 
 
