@@ -12,7 +12,6 @@ import matplotlib.animation as animation
 plt.rcParams['figure.figsize'] = (16, 9)
 
 
-
 class Paddock:
     def __init__(self, map, square_size):
         self.map = map
@@ -31,8 +30,7 @@ class Paddock:
         self.all_obstacles = self.map.obstacles[:]
         self.all_obstacles.append(self.map.bounding_polygon)
         self.sheep_middle_point = np.zeros(2)
-
-
+        self.lost_sheep_pos = np.zeros(2)
 
     def place_obstacles(self):
         dictionary = {}
@@ -165,6 +163,17 @@ class Paddock:
         self.update_grid()
         self.sheep_middle_point = middle_point/len(self.all_sheep)
 
+        # Finds the position of the sheep furthest away from the middle point
+        currently_max_dist = 0
+        current_max_pos = self.sheep_middle_point
+        for sheep in self.all_sheep:
+            dist_to_middle = np.linalg.norm(self.sheep_middle_point - sheep.pos)
+            if dist_to_middle > currently_max_dist:
+                currently_max_dist = dist_to_middle
+                current_max_pos = sheep.pos
+        self.lost_sheep_pos = current_max_pos
+
+
 def animate(i):
     print("i:", i)
 
@@ -175,10 +184,13 @@ def animate(i):
         animate_objects[ind+len(all_animals)].set_ydata([animal.pos[1], animal.dir[1] + animal.pos[1]])
         animate_objects[ind+2*len(all_animals)].set_xdata([animal.pos[0], animal.vel[0] + animal.pos[0]])
         animate_objects[ind+2*len(all_animals)].set_ydata([animal.pos[1], animal.vel[1] + animal.pos[1]])
-    animate_objects[-1].set_xdata(padd.sheep_middle_point[0])
-    animate_objects[-1].set_ydata(padd.sheep_middle_point[1])
-    padd.update()
+    animate_objects[-2].set_xdata(padd.sheep_middle_point[0])
+    animate_objects[-2].set_ydata(padd.sheep_middle_point[1])
+    animate_objects[-1].set_xdata(padd.lost_sheep_pos[0])
+    animate_objects[-1].set_ydata(padd.lost_sheep_pos[1])
 
+
+    padd.update()
 
     return animate_objects
 
@@ -190,7 +202,6 @@ padd.generate_dogs()
 
 # Creates the plot objects
 figure = kart.plot_map()
-middle_point = plt.plot(padd.sheep_middle_point[0], padd.sheep_middle_point[1], "*g", animated=True)[0]
 
 # The sheep and dog dots
 plot_sheep = [plt.plot(sheep.pos[0], sheep.pos[1], "bo",  animated=True)[0] for sheep in padd.all_sheep]
@@ -208,9 +219,13 @@ sheep_vel = [plt.plot([sheep.pos[0], sheep.vel[0] + sheep.pos[0]], [sheep.pos[1]
 dog_vel = [plt.plot([dog.pos[0], dog.vel[0] + dog.pos[0]], [dog.pos[1], dog.vel[1] + dog.pos[1]], "g", animated=True)[0]
            for dog in padd.all_dogs]
 
+middle_point_plot = plt.plot(padd.sheep_middle_point[0], padd.sheep_middle_point[1], "*g", animated=True)[0]
+lost_sheep_plot = plt.plot(padd.lost_sheep_pos[0], padd.lost_sheep_pos[1], "oc", animated=True)[0]
+
 
 animate_objects = plot_sheep + plot_dogs + sheep_dir + dog_dir + sheep_vel + dog_vel
-animate_objects.append(middle_point)
+animate_objects.append(middle_point_plot)
+animate_objects.append(lost_sheep_plot)
 all_animals = padd.all_sheep + padd.all_dogs
 all_dirs = sheep_dir + dog_dir
 
