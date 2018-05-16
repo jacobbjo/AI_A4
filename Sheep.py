@@ -116,13 +116,16 @@ class Sheep(Animal):
             f += away_vel
         return f
 
-    def get_velocity(self, neighbors, obstacle, dogs):
+    def get_velocity(self, neighbors, obstacles, dogs):
         """
         Returns the new velocity based on the neighbors
         :param self:
         :param neighbors:
         :return:
         """
+
+        obstacle = self.get_obstacle_agents(obstacles)
+
         s = self.separation(neighbors)
         k = self.cohesion(neighbors)
         m = self.alignment(neighbors)

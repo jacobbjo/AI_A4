@@ -144,117 +144,6 @@ class Paddock:
             squares.append(self.grid[index[0]][index[1]])
         return squares
 
-    def get_obstacle_agents(self, current_sheep):
-
-        def find_intersecting_point(path_line, obs_edge):
-            """ Finds the point where the lines cross. The lines are np.arrays of np-arrays"""
-            x_mat_line1, x_mat_line2, y_mat_line1, y_mat_line2 = np.ones(path_line.shape), np.ones(path_line.shape), \
-                                                                 np.ones(path_line.shape), np.ones(path_line.shape)
-            x_mat_line1[:, 0] = path_line[:, 0]
-            x_mat_line2[:, 0] = obs_edge[:, 0]
-            y_mat_line1[:, 0] = path_line[:, 1]
-            y_mat_line2[:, 0] = obs_edge[:, 1]
-
-            div_det = np.linalg.det(
-                np.array([[np.linalg.det(x_mat_line1), np.linalg.det(y_mat_line1)], [np.linalg.det(x_mat_line2),
-                                                                                     np.linalg.det(y_mat_line2)]]))
-            x_det = np.linalg.det(
-                np.array([[np.linalg.det(path_line), np.linalg.det(x_mat_line1)], [np.linalg.det(obs_edge),
-                                                                                   np.linalg.det(x_mat_line2)]]))
-            y_det = np.linalg.det(
-                np.array([[np.linalg.det(path_line), np.linalg.det(y_mat_line1)], [np.linalg.det(obs_edge),
-                                                                                   np.linalg.det(y_mat_line2)]]))
-            return np.array([x_det / div_det, y_det / div_det])
-
-        near_obstacles = []
-
-        obstacles = self.map.obstacles[:]
-        obstacles.append(self.map.bounding_polygon)
-
-        # The line to compare with the obstacle edge
-        sheep_collision_line = np.array([current_sheep.pos, current_sheep.pos + current_sheep.dir * self.map.sheep_sight_range*8])
-        point_diff = sheep_collision_line[1] - sheep_collision_line[0]
-
-        normal = np.array([-point_diff[1], point_diff[0]])
-        normal /= np.linalg.norm(normal)
-        normal *= np.linalg.norm(current_sheep.radius)
-
-        sheep_collision_line1 = sheep_collision_line + normal
-        sheep_collision_line2 = sheep_collision_line - normal
-
-        # Finds the closest point of intersection from the sheep to each obstacle
-        for obstacle in obstacles:
-            min_intersect_point = None
-            min_intersect_point_dist = float("infinity")
-            best_vel = np.zeros(2)
-
-            for i in range(len(obstacle.vertices)):
-                obs_edge = np.array([obstacle.vertices[i], obstacle.vertices[i-1]])
-
-                intersect_point1 = None
-                intersect_point2 = None
-                intersect_point = None
-
-                if obstacle.lines_intersect(obs_edge[0], obs_edge[1], sheep_collision_line1[0], sheep_collision_line1[1]):
-                    intersect_point1 = find_intersecting_point(sheep_collision_line1, obs_edge)
-
-                if obstacle.lines_intersect(obs_edge[0], obs_edge[1], sheep_collision_line2[0], sheep_collision_line2[1]):
-                    intersect_point2 = find_intersecting_point(sheep_collision_line2, obs_edge)
-
-                if intersect_point1 is not None:
-                    intersect_point = intersect_point1
-
-                if intersect_point2 is not None and intersect_point is not None:
-                    # Check the closest
-                    if np.linalg.norm(current_sheep.pos - intersect_point2) < \
-                            np.linalg.norm(current_sheep.pos - intersect_point):
-                        intersect_point = intersect_point2
-                else:
-                    intersect_point = intersect_point2
-
-                if intersect_point is not None:
-                    if np.linalg.norm(intersect_point - current_sheep.pos) < self.map.sheep_sight_range*7:
-                        if np.linalg.norm(intersect_point - current_sheep.pos) < min_intersect_point_dist:
-
-                            point_diff = obs_edge[1] - obs_edge[0]
-
-                            normal1 = np.array([-point_diff[1], point_diff[0]])
-                            normal1 /= np.linalg.norm(normal1)
-                            normal1 *= np.linalg.norm(current_sheep.vel)
-
-                            normal2 = normal1 * -1
-
-                            #vel1 = ((obs_edge[0] - obs_edge[1])/np.linalg.norm(obs_edge[0] - obs_edge[1])) * \
-                            #       np.linalg.norm(current_sheep.vel)
-                            #vel2 = -1 * vel1
-
-                            diff_vel1 = np.linalg.norm(current_sheep.vel - normal1)
-                            diff_vel2 = np.linalg.norm(current_sheep.vel - normal2)
-
-                            if diff_vel1 > diff_vel2:
-                                velocity = normal1
-                            else:
-                                velocity = normal2
-
-                            min_intersect_point = intersect_point
-                            best_vel = velocity
-                            min_intersect_point_dist = np.linalg.norm(intersect_point - current_sheep.pos)
-
-            if min_intersect_point is not None:
-                near_obstacles.append(Sheep(self.map, min_intersect_point, best_vel))
-
-        close_sheep = None
-        min_dist_to_obstacle = float("infinity")
-        for obs_sheep in near_obstacles:
-            dist = np.linalg.norm(current_sheep.pos - obs_sheep.pos)
-            if dist < min_dist_to_obstacle:
-                min_dist_to_obstacle = dist
-                close_sheep = obs_sheep
-
-
-
-        return close_sheep
-
     def update_grid(self):
         self.grid = [[[] for c in range(self.grid_cols)] for r in range(self.grid_rows)]
         for sheep in self.all_sheep:
@@ -318,8 +207,8 @@ class Paddock:
         middle_point = np.zeros(2)
         for sheep in self.all_sheep:
             neighbors = self.get_neighbors_in_sight(sheep)
-            obstacles = self.get_obstacle_agents(sheep)
-            sheep.find_new_vel(neighbors, obstacles, self.all_dogs, self.map.dt)
+            #obstacles = self.get_obstacle_agents(sheep)
+            sheep.find_new_vel(neighbors, padd.all_obstacles, self.all_dogs, self.map.dt)
 
         for dog in self.all_dogs:
             dog.find_new_vel(self.all_obstacles, self.map.dt)
