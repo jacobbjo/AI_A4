@@ -58,11 +58,9 @@ class Paddock:
 
         return dictionary
 
-
     def generate_dogs(self):
         for dog_pos in self.map.dog_start_positions:
             self.all_dogs.append(Dog(self.map, dog_pos, np.array([-3.0, 3.0])))
-
 
     def generate_sheep(self):
         # does the initial placement of the sheep
@@ -149,66 +147,10 @@ class Paddock:
         for sheep in self.all_sheep:
             self.get_square(sheep.pos).append(sheep)
 
-    def get_neighbors_in_sight(self, current_sheep):
-        neighbors = []
-        squares = self.get_neighboring_squares(current_sheep.pos)
-
-        for square in squares:
-            for sheep in square:
-
-
-                #if np.linalg.norm(sheep.pos - current_sheep.pos) < self.map.sheep_r*2  and not sheep == current_sheep:
-                #    print("SHEEP COLLISION")
-
-                if self.in_range(current_sheep, sheep) and not sheep == current_sheep:
-                    neighbors.append(sheep)
-
-        return neighbors
-
-
-    def in_range(self, sheep_a, sheep_b):
-        """ Checks sheep_b is in range for sheep_a to care about it when moving """
-        sight_range = self.map.sheep_sight_range
-        sight_ang = self.map.sheep_sight_ang
-
-        # The vector between sheep_a and sheep_b
-        vec_ab = sheep_b.pos - sheep_a.pos
-
-        if np.linalg.norm(vec_ab) < sight_range:
-            sheep_a_ang = atan2(sheep_a.dir[1], sheep_a.dir[0])
-            vec_ab_ang = atan2(vec_ab[1], vec_ab[0])  # The angle from the x-axis to vec_ab
-
-            # Angles from the x-axis to the boundaries
-            right_ang = sheep_a_ang - sight_ang/2
-            left_ang = sheep_a_ang + sight_ang/2
-
-            if right_ang < 0:
-                right_ang += (2*np.pi)
-
-            if left_ang < 0:
-                left_ang += (2*np.pi)
-
-            if vec_ab_ang < 0:
-                vec_ab_ang += (2*np.pi)
-
-            if right_ang > left_ang:
-                # The velocity need to be larger than left and smaller than right
-                return not left_ang < vec_ab_ang < right_ang
-
-            # If/else to prevent from false negative when right_ang < left_ang < vel_ang
-            if right_ang <= vec_ab_ang <= left_ang:
-                return True
-            else:
-                return False
-        else:
-            return False
-
     def update(self):
         middle_point = np.zeros(2)
         for sheep in self.all_sheep:
-            neighbors = self.get_neighbors_in_sight(sheep)
-            #obstacles = self.get_obstacle_agents(sheep)
-            sheep.find_new_vel(neighbors, padd.all_obstacles, self.all_dogs, self.map.dt)
+            sheep.find_new_vel(padd.get_neighboring_squares(sheep.pos), padd.all_obstacles, self.all_dogs, self.map.dt)
 
         for dog in self.all_dogs:
             dog.find_new_vel(self.all_obstacles, self.map.dt)
