@@ -39,6 +39,13 @@ class Polygon:
             if vertex[1] < self.y_min:
                 self.y_min = vertex[1]
 
+    def get_center(self):
+        """returns the center for the polygon"""
+        mean_vertex = np.zeros(2)
+        for vertex in self.vertices:
+            mean_vertex += vertex
+        return mean_vertex / len(self.vertices)
+
     def contain_point(self, point):
         """Determines if the given point is in the polygon or not"""
 
@@ -133,6 +140,7 @@ class Map:
         self.bounding_polygon = Polygon(self.data["bounding_polygon"])
         self.herd_start_polygon = Polygon(self.data["herd_start_polygon"])
         self.herd_goal_polygon = Polygon(self.data["herd_goal_polygon"])
+        self.herd_goal_center = self.herd_goal_polygon.get_center()
         self.dog_start_positions = np.array(self.data["dog_start_positions"])
         self.sheep_n = self.data["sheep_n"]
         self.sheep_r = self.data["sheep_r"]
