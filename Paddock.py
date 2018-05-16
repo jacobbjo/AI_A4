@@ -30,6 +30,7 @@ class Paddock:
 
         self.all_obstacles = self.map.obstacles[:]
         self.all_obstacles.append(self.map.bounding_polygon)
+        self.sheep_middle_point = np.zeros(2)
 
 
 
@@ -66,6 +67,7 @@ class Paddock:
     def generate_sheep(self):
         # does the initial placement of the sheep
         herd_start = self.map.herd_start_polygon
+        tot_pos = np.zeros(2)
 
         for i in range(self.map.sheep_n):
 
@@ -93,10 +95,14 @@ class Paddock:
                         # only some sheep get an initial velocity
                         new_sheep_vel = np.random.normal(0, self.map.sheep_v_max/10, 2)
 
+
                     new_sheep = Sheep(self.map, new_sheep_pos, new_sheep_vel)
                     self.get_square(new_sheep_pos).append(new_sheep)
                     self.all_sheep.append(new_sheep)
+                    tot_pos += new_sheep_pos
                     break
+        self.sheep_middle_point = tot_pos / len(self.all_sheep)
+        hej = 1
 
     def get_square_index(self, position):
         """ returns the indices for the grid for the given position """
@@ -309,6 +315,7 @@ class Paddock:
             return False
 
     def update(self):
+        middle_point = np.zeros(2)
         for sheep in self.all_sheep:
             neighbors = self.get_neighbors_in_sight(sheep)
             obstacles = self.get_obstacle_agents(sheep)
@@ -319,11 +326,13 @@ class Paddock:
 
         for sheep in self.all_sheep:
             sheep.update(self.map.dt)
+            middle_point += sheep.pos
 
         for dog in self.all_dogs:
             dog.update(self.map.dt)
 
         self.update_grid()
+        self.sheep_middle_point = middle_point/len(self.all_sheep)
 
 def animate(i):
     print("i:", i)
@@ -335,19 +344,22 @@ def animate(i):
         animate_objects[ind+len(all_animals)].set_ydata([animal.pos[1], animal.dir[1] + animal.pos[1]])
         animate_objects[ind+2*len(all_animals)].set_xdata([animal.pos[0], animal.vel[0] + animal.pos[0]])
         animate_objects[ind+2*len(all_animals)].set_ydata([animal.pos[1], animal.vel[1] + animal.pos[1]])
-
+    animate_objects[-1].set_xdata(padd.sheep_middle_point[0])
+    animate_objects[-1].set_ydata(padd.sheep_middle_point[1])
     padd.update()
+
 
     return animate_objects
 
 
 kart = Map("maps/M1.json")
-padd = Paddock(kart, 5)
+padd = Paddock(kart, 7)
 padd.generate_sheep()
 padd.generate_dogs()
 
 # Creates the plot objects
 figure = kart.plot_map()
+middle_point = plt.plot(padd.sheep_middle_point[0], padd.sheep_middle_point[1], "*g", animated=True)[0]
 
 # The sheep and dog dots
 plot_sheep = [plt.plot(sheep.pos[0], sheep.pos[1], "bo",  animated=True)[0] for sheep in padd.all_sheep]
@@ -367,6 +379,7 @@ dog_vel = [plt.plot([dog.pos[0], dog.vel[0] + dog.pos[0]], [dog.pos[1], dog.vel[
 
 
 animate_objects = plot_sheep + plot_dogs + sheep_dir + dog_dir + sheep_vel + dog_vel
+animate_objects.append(middle_point)
 all_animals = padd.all_sheep + padd.all_dogs
 all_dirs = sheep_dir + dog_dir
 
