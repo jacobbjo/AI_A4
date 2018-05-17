@@ -6,6 +6,7 @@ class Animal:
         self.vel = vel
         self.radius = radius
 
+
         self.max_vel = v_max
         self.max_acc = a_max
 
@@ -21,12 +22,26 @@ class Animal:
         self.pos_hist = []
         self.next_vel = self.vel
 
-    def update(self, dt):
+    def update(self, the_map, dt):
         self.vel = self.next_vel
         if np.linalg.norm(self.vel) > 0.3:
             self.dir = self.vel / np.linalg.norm(self.vel)
         self.pos_hist.append(self.pos)
-        self.pos += (self.vel * dt)
+        new_pos = self.pos + (self.vel * dt)
+
+        map = the_map.bounding_polygon
+
+        if new_pos[0] < map.x_min:
+            new_pos[0] = map.x_min + 0.1
+        if new_pos[1] < map.y_min:
+            new_pos[1] = map.y_min + 0.1
+        if new_pos[0] > map.x_max:
+            new_pos[0] = map.x_max - 0.1
+        if new_pos[1] > map.y_max:
+            new_pos[1] = map.y_max - 0.1
+
+        self.pos = new_pos
+
 
     def set_new_vel(self, new_acc, dt):
         if np.linalg.norm(new_acc) > self.max_acc:
@@ -131,7 +146,7 @@ class Animal:
                             min_intersect_point_dist = np.linalg.norm(intersect_point - self.pos)
 
             if min_intersect_point is not None:
-                near_obstacles_animals.append(Animal(min_intersect_point, best_vel, 0, 0, 0, 0, 0))
+                near_obstacles_animals.append(Animal(min_intersect_point, best_vel*2, 0, 0, 0, 0, 0))
 
         close_animal = None
         min_dist_to_obstacle = float("infinity")

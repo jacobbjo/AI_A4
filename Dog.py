@@ -3,8 +3,8 @@ from Animal import Animal
 from math import *
 import matplotlib.pyplot as plt
 
-O = 0
-H = 1
+O = 1
+H = 0.2
 
 
 class Dog(Animal):
@@ -48,7 +48,7 @@ class Dog(Animal):
             o = obstacle_sheep.vel / np.linalg.norm(self.pos - obstacle_sheep.pos) * 2
         return o
 
-    def set_herding_vel(self, right_bound, left_bound, herd_middle_point, radius, dt):
+    def set_herding_vel(self, right_bound, left_bound, herd_middle_point, radius):
         """Sets the herding velocity for the dog. If inside of its bounds, goes towards the arc and end point,
         else goes towards the nearest bound """
         print("Radius: ", radius)
@@ -68,7 +68,7 @@ class Dog(Animal):
         self.within_bounds = self.is_withing_angles(left_bound, right_bound, dog_ang)
 
         if self.within_bounds:
-            move_ang = self.norm_ang(self.give_angle((self.max_vel), radius))
+            move_ang = self.norm_ang(self.give_angle(radius*0.3, radius))
             dir = 1
             if not self.towards_right:
                 dir = -1
@@ -77,15 +77,6 @@ class Dog(Animal):
             target_point = radius * np.array([cos(target_ang), sin(target_ang)]) + herd_middle_point
 
             herding_vel = target_point - self.pos
-
-
-
-
-
-
-
-
-
 
         #    dir = 1
         #    if radius < dog_dist_to_middle:
@@ -126,8 +117,8 @@ class Dog(Animal):
         angle = self.norm_ang(arc_length / radius)
         return angle
 
-    def update(self, dt):
-        super().update(dt)  # Updates the new position
+    def update(self, the_map, dt):
+        super().update(the_map, dt)  # Updates the new position
 
         # Checks if the position is outside of the bounds
         middle_dog_vec = (self.pos - self.current_herd_middle_point)

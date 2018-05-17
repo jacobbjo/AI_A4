@@ -50,7 +50,7 @@ class Sheep(Animal):
     def analyze_dogs(self, all_dogs):
         near_dogs = []
         for dog in all_dogs:
-            if np.linalg.norm(self.pos - dog.pos) < self.sight_range * 3:
+            if np.linalg.norm(self.pos - dog.pos) < self.sight_range * 10:
                 near_dogs.append(dog)
         return near_dogs
 
@@ -150,7 +150,7 @@ class Sheep(Animal):
         f = np.zeros(2)
         for dog in dogs:
             away_vec = self.pos - dog.pos
-            away_vel = (away_vec / np.linalg.norm(away_vec)) * (self.max_vel / np.linalg.norm(away_vec))
+            away_vel = (away_vec / np.linalg.norm(away_vec)) * (self.max_vel / 0.5*np.linalg.norm(away_vec))
             f += away_vel
         return f
 

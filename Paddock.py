@@ -155,11 +155,12 @@ class Paddock:
             dog.find_new_vel(self.all_obstacles, self.map.dt)
 
         for sheep in self.all_sheep:
-            sheep.update(self.map.dt)
-            middle_point += sheep.pos
+            sheep.update(self.map, self.map.dt)
+            if not self.map.herd_goal_polygon.point_in_polygon(sheep.pos):
+                middle_point += sheep.pos
 
         for dog in self.all_dogs:
-            dog.update(self.map.dt)
+            dog.update(self.map, self.map.dt)
 
         self.update_grid()
         self.sheep_middle_point = middle_point/len(self.all_sheep)
@@ -169,17 +170,17 @@ class Paddock:
         current_max_pos = self.sheep_middle_point
         for sheep in self.all_sheep:
             dist_to_middle = np.linalg.norm(self.sheep_middle_point - sheep.pos)
-            if dist_to_middle > currently_max_dist:
+            if dist_to_middle > currently_max_dist and not self.map.herd_goal_polygon.point_in_polygon(sheep.pos):
                 currently_max_dist = dist_to_middle
                 current_max_pos = sheep.pos
         self.lost_sheep_pos = current_max_pos
 
     def arc_following(self):
-        #radius = np.linalg.norm(self.sheep_middle_point - self.lost_sheep_pos) * 1.1
-        radius = 60
-        fixed_middle_point = np.array([80, 0])
-        #middle_line = self.sheep_middle_point - self.map.herd_goal_center
-        middle_line = fixed_middle_point - self.map.herd_goal_center
+        radius = np.linalg.norm(self.sheep_middle_point - self.lost_sheep_pos) * 1.1
+        #radius = 60
+        #fixed_middle_point = np.array([80, 0])
+        middle_line = self.sheep_middle_point - self.map.herd_goal_center
+        #middle_line = fixed_middle_point - self.map.herd_goal_center
 
         middle_line_ang = self.norm_ang(atan2(middle_line[1], middle_line[0]))  # the angle to the x-axis from middle line
 
@@ -190,8 +191,8 @@ class Paddock:
         for ind, dog in enumerate(self.all_dogs):
             right_bound = self.norm_ang(tot_right_bound - (dog_sector_ang * ind))
             left_bound = self.norm_ang(tot_right_bound - (dog_sector_ang * (ind + 1)))
-            #dog.set_herding_vel(right_bound, left_bound, self.sheep_middle_point, radius)
-            dog.set_herding_vel(right_bound, left_bound, fixed_middle_point, radius, self.map.dt)
+            dog.set_herding_vel(right_bound, left_bound, self.sheep_middle_point, radius)
+            #dog.set_herding_vel(right_bound, left_bound, fixed_middle_point, radius, self.map.dt)
 
     def norm_ang(self, angle):
         return angle % (2*pi)
