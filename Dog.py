@@ -1,9 +1,10 @@
 import numpy as np
 from Animal import Animal
 from math import *
+import matplotlib.pyplot as plt
 
-O = 1
-H = 0.5
+O = 0
+H = 1
 
 
 class Dog(Animal):
@@ -50,6 +51,8 @@ class Dog(Animal):
     def set_herding_vel(self, right_bound, left_bound, herd_middle_point, radius):
         """Sets the herding velocity for the dog. If inside of its bounds, goes towards the arc and end point,
         else goes towards the nearest bound """
+        print("Radius: " ,radius)
+
         self.right_bound = right_bound
         self.left_bound = left_bound
         self.current_herd_middle_point = herd_middle_point
@@ -58,14 +61,20 @@ class Dog(Animal):
         dog_ang = atan2(middle_dog_vec[1], middle_dog_vec[0])
         dog_dist_to_middle = np.linalg.norm(middle_dog_vec)
 
-        bound_point_R = radius * np.array([cos(right_bound), sin(right_bound)])
-        bound_point_L = radius * np.array([cos(left_bound), sin(left_bound)])
+        bound_point_R = radius * np.array([cos(right_bound), sin(right_bound)]) + herd_middle_point
+        bound_point_L = radius * np.array([cos(left_bound), sin(left_bound)]) + herd_middle_point
 
-        self.within_bounds = self.is_withing_angles(right_bound, left_bound, dog_ang)
+
+        self.within_bounds = self.is_withing_angles(left_bound, right_bound, dog_ang)
 
         if self.within_bounds:
-            out_vel = (radius - dog_dist_to_middle) * (middle_dog_vec / dog_dist_to_middle)
+            dir = 1
+            if radius < dog_dist_to_middle:
+                dir = -1
+            #out_vel = (radius - dog_dist_to_middle) * (middle_dog_vec / dog_dist_to_middle)
+            out_vel = dir * middle_dog_vec
             out_vel /= np.linalg.norm(out_vel)
+            out_vel *= abs(radius - dog_dist_to_middle)
 
             if self.towards_right:
                 dog_bound_point_vec = bound_point_R - self.pos
@@ -73,9 +82,10 @@ class Dog(Animal):
                 dog_bound_point_vec = bound_point_L - self.pos
 
             dog_bound_point_vec /= np.linalg.norm(dog_bound_point_vec)
+            #dog_bound_point_vec /= abs(radius - dog_dist_to_middle)
 
-            herding_vel = out_vel + dog_bound_point_vec
-
+            #herding_vel = out_vel + dog_bound_point_vec
+            herding_vel =  dog_bound_point_vec
 
         else:
 
@@ -88,7 +98,8 @@ class Dog(Animal):
                 herding_vel = dog_bound_L_vec
 
         herding_vel /= np.linalg.norm(herding_vel)
-        herding_vel *= self.max_vel/5
+        herding_vel *= self.max_vel
+
         self.herding_velocity = herding_vel
 
     def update(self, dt):

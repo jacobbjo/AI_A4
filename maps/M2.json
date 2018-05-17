@@ -108,7 +108,7 @@
   "sheep_sight_ang": 350,
   "sheep_sight_range": 3,
   "dog_r": 0.3,
-  "dog_a_max": 3,
+  "dog_a_max": 10,
   "dog_v_max": 14,
   "dog_sight_ang": 180,
   "dog_sight_range": 5,

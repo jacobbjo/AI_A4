@@ -175,8 +175,11 @@ class Paddock:
         self.lost_sheep_pos = current_max_pos
 
     def arc_following(self):
-        radius = np.linalg.norm(self.sheep_middle_point - self.lost_sheep_pos) * 1.1
-        middle_line = self.sheep_middle_point - self.map.herd_goal_center
+        #radius = np.linalg.norm(self.sheep_middle_point - self.lost_sheep_pos) * 1.1
+        radius = 60
+        fixed_middle_point = np.array([80, 0])
+        #middle_line = self.sheep_middle_point - self.map.herd_goal_center
+        middle_line = fixed_middle_point - self.map.herd_goal_center
 
         middle_line_ang = atan2(middle_line[1], middle_line[0])  # the angle to the x-axis from middle line
 
@@ -185,11 +188,10 @@ class Paddock:
         tot_right_bound = middle_line_ang + (self.map.dog_chase_arc_ang / 2)
 
         for ind, dog in enumerate(self.all_dogs):
-
             right_bound = tot_right_bound - (dog_sector_ang * ind)
             left_bound = tot_right_bound - (dog_sector_ang * (ind + 1))
-
-            dog.set_herding_vel(right_bound, left_bound, self.sheep_middle_point, radius)
+            #dog.set_herding_vel(right_bound, left_bound, self.sheep_middle_point, radius)
+            dog.set_herding_vel(right_bound, left_bound, fixed_middle_point, radius)
 
 
 
@@ -221,7 +223,7 @@ def animate(i):
     return animate_objects
 
 
-kart = Map("maps/M1.json")
+kart = Map("maps/M2.json")
 padd = Paddock(kart, 7)
 padd.generate_sheep()
 padd.generate_dogs()
@@ -231,7 +233,7 @@ figure = kart.plot_map()
 
 # The sheep and dog dots
 plot_sheep = [plt.plot(sheep.pos[0], sheep.pos[1], "bo",  animated=True)[0] for sheep in padd.all_sheep]
-plot_dogs = [plt.plot(dog.pos[0], dog.pos[1], "ro",  animated=True)[0] for dog in padd.all_dogs]
+plot_dogs = [plt.plot(dog.pos[0], dog.pos[1], "o",  animated=True)[0] for dog in padd.all_dogs]
 
 # The direction for the sheep and dogs
 sheep_dir = [plt.plot([sheep.pos[0], sheep.dir[0] + sheep.pos[0]], [sheep.pos[1], sheep.dir[1] + sheep.pos[1]], "b",
@@ -248,6 +250,7 @@ dog_vel = [plt.plot([dog.pos[0], dog.vel[0] + dog.pos[0]], [dog.pos[1], dog.vel[
 middle_point_plot = plt.plot(padd.sheep_middle_point[0], padd.sheep_middle_point[1], "*g", animated=True)[0]
 lost_sheep_plot = plt.plot(padd.lost_sheep_pos[0], padd.lost_sheep_pos[1], "oc", animated=True)[0]
 
+# Plots circle for debuging
 
 animate_objects = plot_sheep + plot_dogs + sheep_dir + dog_dir + sheep_vel + dog_vel
 animate_objects.append(middle_point_plot)

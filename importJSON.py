@@ -188,7 +188,9 @@ class Map:
 
         for obstacle in self.obstacles:
             obstacle.plot(axes, "r")
+        circle = plt.Circle((80, 0), 60, color="black", fill=False)
 
+        axes.add_artist(circle)
         return fig
 
 
