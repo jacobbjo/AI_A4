@@ -26,7 +26,7 @@ class Animal:
         if np.linalg.norm(self.vel) > 0.3:
             self.dir = self.vel / np.linalg.norm(self.vel)
         self.pos_hist.append(self.pos)
-        self.pos += self.vel * dt
+        self.pos += (self.vel * dt)
 
     def set_new_vel(self, new_acc, dt):
         if np.linalg.norm(new_acc) > self.max_acc:
@@ -34,7 +34,7 @@ class Animal:
             new_acc /= np.linalg.norm(new_acc)
             new_acc *= self.max_acc
 
-        self.next_vel = self.vel + new_acc * dt
+        self.next_vel = self.vel + (new_acc * dt)
         #self.next_vel = self.get_acceleration(neighbors, dt)
 
         if np.linalg.norm(self.next_vel) > self.max_vel:

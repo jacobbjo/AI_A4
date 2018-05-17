@@ -181,25 +181,23 @@ class Paddock:
         #middle_line = self.sheep_middle_point - self.map.herd_goal_center
         middle_line = fixed_middle_point - self.map.herd_goal_center
 
-        middle_line_ang = atan2(middle_line[1], middle_line[0])  # the angle to the x-axis from middle line
+        middle_line_ang = self.norm_ang(atan2(middle_line[1], middle_line[0]))  # the angle to the x-axis from middle line
 
-        dog_sector_ang = self.map.dog_chase_arc_ang / len(self.all_dogs)
+        dog_sector_ang = self.norm_ang(self.map.dog_chase_arc_ang / len(self.all_dogs))
 
-        tot_right_bound = middle_line_ang + (self.map.dog_chase_arc_ang / 2)
+        tot_right_bound = self.norm_ang(middle_line_ang + (self.map.dog_chase_arc_ang / 2))
 
         for ind, dog in enumerate(self.all_dogs):
-            right_bound = tot_right_bound - (dog_sector_ang * ind)
-            left_bound = tot_right_bound - (dog_sector_ang * (ind + 1))
+            right_bound = self.norm_ang(tot_right_bound - (dog_sector_ang * ind))
+            left_bound = self.norm_ang(tot_right_bound - (dog_sector_ang * (ind + 1)))
             #dog.set_herding_vel(right_bound, left_bound, self.sheep_middle_point, radius)
-            dog.set_herding_vel(right_bound, left_bound, fixed_middle_point, radius)
+            dog.set_herding_vel(right_bound, left_bound, fixed_middle_point, radius, self.map.dt)
+
+    def norm_ang(self, angle):
+        return angle % (2*pi)
 
 
 
-
-
-def give_angle(arc_length, radius):
-    angle = arc_length/radius
-    return angle
 
 
 def animate(i):
