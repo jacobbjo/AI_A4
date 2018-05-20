@@ -30,7 +30,9 @@ class Paddock:
         self.all_obstacles = self.map.obstacles[:]
         self.all_obstacles.append(self.map.bounding_polygon)
         self.sheep_middle_point = np.zeros(2)
-        self.lost_sheep_pos = np.zeros(2)
+        self.lost_sheep_pos = []
+        self.lost_sheep_dists = []
+
 
     def place_obstacles(self):
         dictionary = {}
@@ -59,6 +61,9 @@ class Paddock:
     def generate_dogs(self):
         for dog_pos in self.map.dog_start_positions:
             self.all_dogs.append(Dog(self.map, dog_pos, np.array([-3.0, 3.0])))
+        self.lost_sheep_pos = [np.zeros(2)] * len(self.all_dogs)
+        self.lost_sheep_dists = [1] * len(self.all_dogs)
+
 
     def generate_sheep(self):
         # does the initial placement of the sheep
@@ -102,9 +107,11 @@ class Paddock:
 
     def get_square_index(self, position):
         """ returns the indices for the grid for the given position """
+        #try:
         grid_row = int((position[1] - self.map.bounding_polygon.y_min) // self.square_size)
         grid_col = int((position[0] - self.map.bounding_polygon.x_min) // self.square_size)
-
+        #except ValueError:
+            #print("Hej")
         if grid_row < 0 or grid_col < 0 or grid_row >= self.grid_rows or grid_col >= self.grid_cols:
             raise IndexError("Sheep is out of bounds")
 
@@ -168,15 +175,34 @@ class Paddock:
         # Finds the position of the sheep furthest away from the middle point
         currently_max_dist = 0
         current_max_pos = self.sheep_middle_point
+
+        lost_sheep_list = [np.zeros(2)] * len(self.all_dogs)
+        lost_sheep_dists = [float("infinity")] * len(self.all_dogs)
+        has_sheep_in_sector = [False] * len(self.all_dogs)
+
         for sheep in self.all_sheep:
-            dist_to_middle = np.linalg.norm(self.sheep_middle_point - sheep.pos)
-            if dist_to_middle > currently_max_dist and not self.map.herd_goal_polygon.point_in_polygon(sheep.pos):
-                currently_max_dist = dist_to_middle
-                current_max_pos = sheep.pos
-        self.lost_sheep_pos = current_max_pos
+            middle_sheep_vec = sheep.pos - self.sheep_middle_point
+            sheep_ang = self.norm_ang(atan2(middle_sheep_vec[1], middle_sheep_vec[0]))
+            for ind, dog in enumerate(self.all_dogs):
+                if dog.is_withing_angles(dog.left_bound, dog.right_bound, sheep_ang):
+                    if np.linalg.norm(middle_sheep_vec) > self.lost_sheep_dists[ind]:
+                        self.lost_sheep_pos[ind] = sheep.pos
+                        self.lost_sheep_dists[ind] = np.linalg.norm(middle_sheep_vec)
+                        has_sheep_in_sector[ind] = True
+                        break
+        for i in range(len(self.all_dogs)):
+            if not has_sheep_in_sector[i]:
+                self.lost_sheep_dists[i] = min(self.lost_sheep_dists)
+
+
+
+            #dist_to_middle = np.linalg.norm(self.sheep_middle_point - sheep.pos)
+            #if dist_to_middle > currently_max_dist and not self.map.herd_goal_polygon.point_in_polygon(sheep.pos):
+            #    currently_max_dist = dist_to_middle
+            #    current_max_pos = sheep.pos
+
 
     def arc_following(self):
-        radius = np.linalg.norm(self.sheep_middle_point - self.lost_sheep_pos) * 1.1
         #radius = 60
         #fixed_middle_point = np.array([80, 0])
         middle_line = self.sheep_middle_point - self.map.herd_goal_center
@@ -189,6 +215,8 @@ class Paddock:
         tot_right_bound = self.norm_ang(middle_line_ang + (self.map.dog_chase_arc_ang / 2))
 
         for ind, dog in enumerate(self.all_dogs):
+            radius = self.lost_sheep_dists[ind] * 1.1
+
             right_bound = self.norm_ang(tot_right_bound - (dog_sector_ang * ind))
             left_bound = self.norm_ang(tot_right_bound - (dog_sector_ang * (ind + 1)))
             dog.set_herding_vel(right_bound, left_bound, self.sheep_middle_point, radius)
@@ -223,7 +251,7 @@ def animate(i):
 
 
 kart = Map("maps/M2.json")
-padd = Paddock(kart, 7)
+padd = Paddock(kart, 10)
 padd.generate_sheep()
 padd.generate_dogs()
 

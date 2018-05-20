@@ -24,7 +24,7 @@ class Dog(Animal):
 
     def get_acceleration(self, obstacles, dt):
         """Finds the new acceleration"""
-        obstacle = self.get_obstacle_agents2(obstacles)
+        obstacle = self.get_obstacle_agents(obstacles)
         o = self.obstacle_avoidance(obstacle)
 
         new_vel = self.vel + O*o + H * self.herding_velocity
@@ -52,7 +52,7 @@ class Dog(Animal):
         # ------ For more agents in a list
         #for obstacle_agent in obstacle_sheep:
         #    if obstacle_agent is not None:
-        #        o += obstacle_agent.vel / np.linalg.norm(self.pos - obstacle_agent.pos) * 2
+        #        o += (obstacle_agent.vel / np.linalg.norm(self.pos - obstacle_agent.pos)) * 2
         #return o
 
 

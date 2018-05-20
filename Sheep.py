@@ -22,12 +22,12 @@ EPS = 0.1
 # Separation
 
 O = 2
-F = 0.8
+F = 0.5
 
-S = 0.7
+S = 0.4
 
-K = 0.5
-M = 0.4
+K = 0.3
+M = 0.2
 
 class Sheep(Animal):
     def __init__(self, the_map, pos, vel=np.zeros(2)):
@@ -144,21 +144,29 @@ class Sheep(Animal):
 
         o = np.zeros(2)
         if obstacle_sheep is not None:
-            o = obstacle_sheep.vel / np.linalg.norm(self.pos - obstacle_sheep.pos) * 2
+            scale = np.linalg.norm(self.pos - obstacle_sheep.pos) * 2
+            if scale > 0:
+                o += obstacle_sheep.vel / scale
+            else:
+                o += obstacle_sheep.vel
         return o
 
         # ---- For more agents in a list
         #for obstacle_agent in obstacle_sheep:
         #    if obstacle_agent is not None:
-        #        o += obstacle_agent.vel / np.linalg.norm(self.pos - obstacle_agent.pos) * 2
+        #        scale = np.linalg.norm(self.pos - obstacle_agent.pos) * 2
+        #        if scale > 0:
+        #            o += obstacle_agent.vel / scale
+        #        else:
+        #            o += obstacle_agent.vel
         #return o
 
 
-    def flee_dogs(self, dogs):
+    def avoid_dogs(self, dogs):
         f = np.zeros(2)
         for dog in dogs:
             away_vec = self.pos - dog.pos
-            away_vel = (away_vec / np.linalg.norm(away_vec)) * (self.max_vel / 0.5*np.linalg.norm(away_vec))
+            away_vel = (away_vec / np.linalg.norm(away_vec)) * (self.max_vel / np.linalg.norm(away_vec))
             f += away_vel
         if len(dogs) > 0:
             f /= len(dogs)
@@ -173,14 +181,14 @@ class Sheep(Animal):
         :return:
         """
 
-        obstacle = self.get_obstacle_agents2(obstacles)
+        obstacle = self.get_obstacle_agents(obstacles)
         neighbors = self.get_neighbors_in_sight(neighboring_squares)
 
         s = self.separation(neighbors)
         k = self.cohesion(neighbors)
         m = self.alignment(neighbors)
         o = self.obstacle_avoidance(obstacle)
-        f = self.flee_dogs(dogs)
+        f = self.avoid_dogs(dogs)
 
         new_vel = self.vel + S * s + K * k + M * m + O * o + F * f
 

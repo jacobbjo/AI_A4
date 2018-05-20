@@ -186,11 +186,15 @@ class Animal:
                                                                                    np.linalg.det(y_mat_line2)]]))
             return np.array([x_det / div_det, y_det / div_det])
 
-        obstacle_edges = []
+        obstacle_edges = []  # List with all the edges of the obstacles
+        obstacle_agents = []
+        sight_amplifier = 7
+
         for obstacle in obstacles:
             for i in range(len(obstacle.vertices)):  # Go through the edges of the obstacles
                 obstacle_edges.append(np.array([obstacle.vertices[i], obstacle.vertices[i-1]]))
 
+        # Finds the two lines from the agent towards the obstacle (the cylinder)
         agent_middle_path = np.array([self.pos, self.pos + self.dir * self.sight_range*100])
         point_diff = agent_middle_path[1] - agent_middle_path[0]
 
@@ -201,60 +205,40 @@ class Animal:
         animal_collision_right = agent_middle_path + normal
         animal_collision_left = agent_middle_path - normal
 
-        intersecting_points_right = []
-        intersecting_points_left = []
+        intersecting_points = []
 
-        for edge in obstacle_edges:  # Gå igenom alla kanter och hitta de kanter som träffas
+        for edge in obstacle_edges:  # Goes through all edges and saves those that are intersecting with the path
             edge_normal = self.find_edge_normal(edge)
 
-            intersecting_points = []
             if obstacles[0].lines_intersect(edge[0], edge[1], animal_collision_right[0], animal_collision_right[1]):
-                intersecting_points_right.append(find_intersecting_point(animal_collision_right, edge))
+                found_intersecting_point = find_intersecting_point(animal_collision_right, edge)
+                if np.linalg.norm(found_intersecting_point - self.pos) < sight_amplifier * self.sight_range:
+                    intersecting_points.append(found_intersecting_point)
             if obstacles[0].lines_intersect(edge[0], edge[1], animal_collision_left[0], animal_collision_left[1]):
-                intersecting_points_left.append(find_intersecting_point(animal_collision_left, edge))
+                found_intersecting_point = find_intersecting_point(animal_collision_left, edge)
+                if np.linalg.norm(found_intersecting_point - self.pos) < sight_amplifier * self.sight_range:
+                    intersecting_points.append(found_intersecting_point)
 
-        closest_intersecting_point_right = None
-        closest_intersecting_point_left = None
+            edge_line_parameters = self.find_line_eq(edge[0], edge[1])
+            dist, point_on_obstacle = self.dist_point_to_line(self.pos, edge_line_parameters)
+            if dist < self.sight_range *  sight_amplifier:
+                vel = edge_normal / np.linalg.norm(edge_normal)
+                vel *= self.max_vel
+                obstacle_agents.append(Animal(point_on_obstacle, vel, self.radius, 0, 0, 0, 0))
 
-        closest_distance_right = float("infinity")
-        closest_distance_left = float("infinity")
+        closest_distance = float("infinity")
+        closest_intersecting_point = None
 
-        for intersecting_point in intersecting_points_right:
-            if np.linalg.norm(intersecting_point - self.pos) < closest_distance_right:
-                closest_intersecting_point_right = intersecting_point
-                closest_distance_right = np.linalg.norm(intersecting_point - self.pos)
+        for intersecting_point in intersecting_points:
+            if np.linalg.norm(intersecting_point - self.pos) < closest_distance:
+                closest_intersecting_point = intersecting_point
+                closest_distance = np.linalg.norm(intersecting_point - self.pos)
 
-        for intersecting_point in intersecting_points_left:
-            if np.linalg.norm(intersecting_point - self.pos) < closest_distance_left:
-                closest_intersecting_point_left = intersecting_point
-                closest_distance_left = np.linalg.norm(intersecting_point - self.pos)
+        # The closest point on the course
+        if closest_intersecting_point is not None:
+            obstacle_agents.append(Animal(self.pos, -1*self.vel, self.radius, 0, 0, 0, 0))
 
-        if closest_intersecting_point_right is not None:
-
-
-
-
-            # Skapar agent för varje punkt (hastigheten är rakt ut från hindret
-            for intersecting_point in intersecting_points:
-
-
-        # ---------- GAMMMAL KOD
-                    # Finds the point on the obstacle which is on a straight orthogonal line from the agent
-            # Finds the equation for the side of the obstacle
-            #if closest_obstacle_line is not None:
-            line_parameters = self.find_line_eq(obs_edge[0], obs_edge[1])
-            # Finds the point on the obstacle
-            dist, point_on_obstacle = self.dist_point_to_line(self.pos, line_parameters)
-            # Computes the velocity straight to the agent
-            if dist < self.sight_range * 3:
-                orthogonal_vel = self.pos - point_on_obstacle
-                orthogonal_vel /= np.linalg.norm(orthogonal_vel)
-                orthogonal_vel *= np.linalg.norm(self.vel)
-                orthogonal_obstacle_agents.append(Animal(point_on_obstacle, orthogonal_vel*2, 0, 0, 0, 0, 0))
-
-
-
-
+        return obstacle_agents
 
     def find_edge_normal(self, edge):
         edge_point_diff = edge[1] - edge[0]
