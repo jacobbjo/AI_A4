@@ -77,7 +77,7 @@ class Polygon:
 
     def lines_intersect(self, p1, q1, p2, q2):
         """
-        Determines whether the line p1-q1 intersects the line p2-q2
+        Determines whether the line p1-q1 intersects the line p2-q2. Not obstacle specific.
 
         https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
 

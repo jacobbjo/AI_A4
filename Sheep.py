@@ -21,8 +21,8 @@ EPS = 0.1
 
 # Separation
 
-O = 1
-F = 1
+O = 2
+F = 0.8
 
 S = 0.7
 
@@ -141,10 +141,18 @@ class Sheep(Animal):
         return m
 
     def obstacle_avoidance(self, obstacle_sheep):
+
         o = np.zeros(2)
         if obstacle_sheep is not None:
             o = obstacle_sheep.vel / np.linalg.norm(self.pos - obstacle_sheep.pos) * 2
         return o
+
+        # ---- For more agents in a list
+        #for obstacle_agent in obstacle_sheep:
+        #    if obstacle_agent is not None:
+        #        o += obstacle_agent.vel / np.linalg.norm(self.pos - obstacle_agent.pos) * 2
+        #return o
+
 
     def flee_dogs(self, dogs):
         f = np.zeros(2)
@@ -152,6 +160,9 @@ class Sheep(Animal):
             away_vec = self.pos - dog.pos
             away_vel = (away_vec / np.linalg.norm(away_vec)) * (self.max_vel / 0.5*np.linalg.norm(away_vec))
             f += away_vel
+        if len(dogs) > 0:
+            f /= len(dogs)
+
         return f
 
     def get_velocity(self, neighboring_squares, obstacles, dogs):
@@ -162,7 +173,7 @@ class Sheep(Animal):
         :return:
         """
 
-        obstacle = self.get_obstacle_agents(obstacles)
+        obstacle = self.get_obstacle_agents2(obstacles)
         neighbors = self.get_neighbors_in_sight(neighboring_squares)
 
         s = self.separation(neighbors)
