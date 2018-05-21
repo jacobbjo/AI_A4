@@ -183,14 +183,11 @@ class Map:
         axes.axis("equal")
 
         self.bounding_polygon.plot(axes, "b")
-        self.herd_start_polygon.plot(axes, "g")
-        self.herd_goal_polygon.plot(axes, "r")
+        self.herd_start_polygon.plot(axes, "#d7f7ad")
 
         for obstacle in self.obstacles:
             obstacle.plot(axes, "r")
-        circle = plt.Circle((80, 0), 60, color="black", fill=False)
 
-        axes.add_artist(circle)
         return fig
 
 

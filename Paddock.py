@@ -33,6 +33,15 @@ class Paddock:
         self.lost_sheep_pos = []
         self.lost_sheep_dists = []
 
+        self.generate_sheep()
+        self.generate_dogs()
+
+        start_polygon = self.map.bounding_polygon.vertices
+        middle_x = (start_polygon[0][0] + start_polygon[1][0])/2
+        middle_y = (start_polygon[0][1] + start_polygon[2][1])/2
+        self.global_middle_point = np.array([middle_x, middle_y])
+
+
 
     def place_obstacles(self):
         dictionary = {}
@@ -159,7 +168,8 @@ class Paddock:
 
         self.arc_following()
         for dog in self.all_dogs:
-            dog.find_new_vel(self.all_obstacles, self.map.dt)
+            #dog.find_new_vel(padd.get_neighboring_squares(dog.pos), self.all_obstacles, self.map.dt)
+            dog.find_new_vel([], self.all_obstacles, self.map.dt)
 
         for sheep in self.all_sheep:
             sheep.update(self.map, self.map.dt)
@@ -172,30 +182,6 @@ class Paddock:
         self.update_grid()
         self.sheep_middle_point = middle_point/len(self.all_sheep)
 
-        # Finds the position of the sheep furthest away from the middle point
-        currently_max_dist = 0
-        current_max_pos = self.sheep_middle_point
-
-        lost_sheep_list = [np.zeros(2)] * len(self.all_dogs)
-        lost_sheep_dists = [float("infinity")] * len(self.all_dogs)
-        has_sheep_in_sector = [False] * len(self.all_dogs)
-
-        for sheep in self.all_sheep:
-            middle_sheep_vec = sheep.pos - self.sheep_middle_point
-            sheep_ang = self.norm_ang(atan2(middle_sheep_vec[1], middle_sheep_vec[0]))
-            for ind, dog in enumerate(self.all_dogs):
-                if dog.is_withing_angles(dog.left_bound, dog.right_bound, sheep_ang):
-                    if np.linalg.norm(middle_sheep_vec) > self.lost_sheep_dists[ind]:
-                        self.lost_sheep_pos[ind] = sheep.pos
-                        self.lost_sheep_dists[ind] = np.linalg.norm(middle_sheep_vec)
-                        has_sheep_in_sector[ind] = True
-                        break
-        for i in range(len(self.all_dogs)):
-            if not has_sheep_in_sector[i]:
-                self.lost_sheep_dists[i] = min(self.lost_sheep_dists)
-
-
-
             #dist_to_middle = np.linalg.norm(self.sheep_middle_point - sheep.pos)
             #if dist_to_middle > currently_max_dist and not self.map.herd_goal_polygon.point_in_polygon(sheep.pos):
             #    currently_max_dist = dist_to_middle
@@ -205,7 +191,11 @@ class Paddock:
     def arc_following(self):
         #radius = 60
         #fixed_middle_point = np.array([80, 0])
-        middle_line = self.sheep_middle_point - self.map.herd_goal_center
+
+        #
+        adjusted_middle_point = np.array([self.sheep_middle_point[0], self.global_middle_point[1]])
+        middle_line = adjusted_middle_point - self.map.herd_goal_center
+
         #middle_line = fixed_middle_point - self.map.herd_goal_center
 
         middle_line_ang = self.norm_ang(atan2(middle_line[1], middle_line[0]))  # the angle to the x-axis from middle line
@@ -214,19 +204,49 @@ class Paddock:
 
         tot_right_bound = self.norm_ang(middle_line_ang + (self.map.dog_chase_arc_ang / 2))
 
+        # Finds the position of the sheep furthest away from the middle point
+        currently_max_dist = 0
+        current_max_pos = self.sheep_middle_point
+
+        lost_sheep_list = [np.zeros(2)] * len(self.all_dogs)
+        lost_sheep_dists = [0] * len(self.all_dogs)
+        has_sheep_in_sector = [False] * len(self.all_dogs)
+
+        for sheep in self.all_sheep:
+            middle_sheep_vec = sheep.pos - adjusted_middle_point
+            sheep_ang = self.norm_ang(atan2(middle_sheep_vec[1], middle_sheep_vec[0]))
+            for ind, dog in enumerate(self.all_dogs):
+                if dog.is_withing_angles(dog.left_bound, dog.right_bound, sheep_ang):
+                    has_sheep_in_sector[ind] = True
+                    if np.linalg.norm(middle_sheep_vec) > lost_sheep_dists[ind]:
+                        self.lost_sheep_pos[ind] = sheep.pos
+                        lost_sheep_dists[ind] = np.linalg.norm(middle_sheep_vec)
+                    break
+
+                # if ind == 2:
+                #    print("hej")
+
+        self.lost_sheep_dists = lost_sheep_dists
+
         for ind, dog in enumerate(self.all_dogs):
-            radius = self.lost_sheep_dists[ind] * 1.1
+            radius = np.linalg.norm(self.lost_sheep_pos[ind] - adjusted_middle_point) * 1.2
 
             right_bound = self.norm_ang(tot_right_bound - (dog_sector_ang * ind))
             left_bound = self.norm_ang(tot_right_bound - (dog_sector_ang * (ind + 1)))
-            dog.set_herding_vel(right_bound, left_bound, self.sheep_middle_point, radius)
+            #middle_point_arc = np.array([self.sheep_middle_point[0], self.global_middle_point[1]])
+
+            # Checks whether the dog has a sheep within its bounds or not
+            if not has_sheep_in_sector[ind]:
+                self.lost_sheep_dists[ind] = min(self.lost_sheep_dists)
+                middle_ang = (right_bound + left_bound)/2
+
+                self.lost_sheep_pos[ind] = 3 * np.array([cos(middle_ang), sin(middle_ang)]) + adjusted_middle_point
+
+            dog.set_herding_vel(right_bound, left_bound, adjusted_middle_point, radius, self.lost_sheep_pos[ind])
             #dog.set_herding_vel(right_bound, left_bound, fixed_middle_point, radius, self.map.dt)
 
     def norm_ang(self, angle):
         return angle % (2*pi)
-
-
-
 
 
 def animate(i):
@@ -239,10 +259,11 @@ def animate(i):
         animate_objects[ind+len(all_animals)].set_ydata([animal.pos[1], animal.dir[1] + animal.pos[1]])
         animate_objects[ind+2*len(all_animals)].set_xdata([animal.pos[0], animal.vel[0] + animal.pos[0]])
         animate_objects[ind+2*len(all_animals)].set_ydata([animal.pos[1], animal.vel[1] + animal.pos[1]])
-    animate_objects[-2].set_xdata(padd.sheep_middle_point[0])
-    animate_objects[-2].set_ydata(padd.sheep_middle_point[1])
-    animate_objects[-1].set_xdata(padd.lost_sheep_pos[0])
-    animate_objects[-1].set_ydata(padd.lost_sheep_pos[1])
+    #animate_objects[-1 - len(padd.all_dogs)].set_xdata(padd.sheep_middle_point[0])
+    #animate_objects[-1 - len(padd.all_dogs)].set_ydata(padd.sheep_middle_point[1])
+    #for i in range(len(padd.all_dogs)):
+    #    animate_objects[-len(padd.all_dogs)+i].set_xdata(padd.lost_sheep_pos[i][0])
+    #    animate_objects[-len(padd.all_dogs)+i].set_ydata(padd.lost_sheep_pos[i][1])
 
 
     padd.update()
@@ -252,8 +273,6 @@ def animate(i):
 
 kart = Map("maps/M2.json")
 padd = Paddock(kart, 10)
-padd.generate_sheep()
-padd.generate_dogs()
 
 # Creates the plot objects
 figure = kart.plot_map()
@@ -274,14 +293,15 @@ sheep_vel = [plt.plot([sheep.pos[0], sheep.vel[0] + sheep.pos[0]], [sheep.pos[1]
 dog_vel = [plt.plot([dog.pos[0], dog.vel[0] + dog.pos[0]], [dog.pos[1], dog.vel[1] + dog.pos[1]], "g", animated=True)[0]
            for dog in padd.all_dogs]
 
-middle_point_plot = plt.plot(padd.sheep_middle_point[0], padd.sheep_middle_point[1], "*g", animated=True)[0]
-lost_sheep_plot = plt.plot(padd.lost_sheep_pos[0], padd.lost_sheep_pos[1], "oc", animated=True)[0]
+#middle_point_plot = plt.plot(padd.sheep_middle_point[0], padd.sheep_middle_point[1], "*g", animated=True)[0]
+#lost_sheep_plot = [plt.plot(one_lost_sheep_pos[0], one_lost_sheep_pos[1], "o", animated=True)[0]
+#                   for one_lost_sheep_pos in padd.lost_sheep_pos]
 
-# Plots circle for debuging
+# Plots circle for debugging
 
 animate_objects = plot_sheep + plot_dogs + sheep_dir + dog_dir + sheep_vel + dog_vel
-animate_objects.append(middle_point_plot)
-animate_objects.append(lost_sheep_plot)
+#animate_objects.append(middle_point_plot)
+#animate_objects += lost_sheep_plot
 all_animals = padd.all_sheep + padd.all_dogs
 all_dirs = sheep_dir + dog_dir
 

@@ -1,4 +1,5 @@
 import numpy as np
+from math import *
 
 class Animal:
     def __init__(self, pos, vel, radius, v_max, a_max, sight_range, sight_angle):
@@ -149,7 +150,7 @@ class Animal:
                             min_intersect_point_dist = np.linalg.norm(intersect_point - self.pos)
 
             if min_intersect_point is not None:
-                near_obstacles_animals.append(Animal(min_intersect_point, best_vel, 0, 0, 0, 0, 0))
+                near_obstacles_animals.append(Animal(min_intersect_point, best_vel*3, 0, 0, 0, 0, 0))
 
 
         close_animal = None
@@ -251,12 +252,6 @@ class Animal:
         else:
             return (edge_normal / np.linalg.norm(edge_normal)) * -1
 
-
-
-
-
-
-
     def is_withing_angles(self, ang_1, ang_2, vec_ang):
 
         if ang_1 < 0:
@@ -270,7 +265,8 @@ class Animal:
 
         if ang_1 > ang_2:
             # The velocity need to be larger than left and smaller than right
-            return not ang_2 < vec_ang < ang_1
+
+            return not ((ang_2 < vec_ang) and (vec_ang < ang_1))
 
         # If/else to prevent from false negative when right_ang < left_ang < vel_ang
         if ang_1 <= vec_ang <= ang_2:
@@ -286,7 +282,6 @@ class Animal:
 
         return (a, b, c)
 
-
     def dist_point_to_line(self, point, line_parameters):
         """Computes the distance from a point to a line. Returns the distance and the closest point on the line"""
         a = line_parameters[0]
@@ -297,3 +292,40 @@ class Animal:
 
         return distance, np.array([close_x, close_y])
 
+
+    def get_neighbors_in_sight(self, neighboring_squares):
+        """ Finds the neighbors in range """
+        neighbors = []
+
+        for square in neighboring_squares:
+            for sheep in square:
+
+                #if np.linalg.norm(sheep.pos - current_sheep.pos) < self.map.sheep_r*2  and not sheep == current_sheep:
+                #    print("SHEEP COLLISION")
+
+                if self.in_range(sheep) and not sheep == self:
+                    neighbors.append(sheep)
+
+        return neighbors
+
+    def in_range(self, sheep_b):
+        """ Checks sheep_b is in range for sheep_a to care about it when moving """
+        sight_range = self.sight_range
+        sight_ang = self.sight_angle
+
+        # The vector between sheep_a and sheep_b
+        vec_ab = sheep_b.pos - self.pos
+
+        if np.linalg.norm(vec_ab) < sight_range:
+
+            sheep_a_ang = atan2(self.dir[1], self.dir[0])
+            vec_ab_ang = atan2(vec_ab[1], vec_ab[0])  # The angle from the x-axis to vec_ab
+
+            # Angles from the x-axis to the boundaries
+            right_ang = sheep_a_ang - sight_ang/2
+            left_ang = sheep_a_ang + sight_ang/2
+
+            return self.is_withing_angles(right_ang, left_ang, vec_ab_ang)
+
+        else:
+            return False

@@ -4,7 +4,8 @@ from math import *
 import matplotlib.pyplot as plt
 
 O = 1
-H = 0.2
+H = 0.3
+A = 0 # Avoids running into sheep
 
 
 class Dog(Animal):
@@ -15,6 +16,9 @@ class Dog(Animal):
 
         self.right_bound = 0
         self.left_bound = 0
+        self.right_turn_ang = 0
+        self.left_turn_ang = 0
+
         self.within_bounds = False
         self.towards_right = True
 
@@ -22,12 +26,16 @@ class Dog(Animal):
         self.herding_velocity = np.zeros(2)
 
 
-    def get_acceleration(self, obstacles, dt):
+    def get_acceleration(self, sheep_neighbors, obstacles, dt):
         """Finds the new acceleration"""
         obstacle = self.get_obstacle_agents(obstacles)
         o = self.obstacle_avoidance(obstacle)
 
-        new_vel = self.vel + O*o + H * self.herding_velocity
+        #a = self.avoid_sheep(sheep_neighbors)
+
+
+
+        new_vel = self.vel + O*o + H * self.herding_velocity #+ A * a
 
         if np.linalg.norm(new_vel) > self.max_vel:
             new_vel /= np.linalg.norm(new_vel)
@@ -36,9 +44,10 @@ class Dog(Animal):
         acc = (new_vel - self.vel)/dt
         return acc
 
-    def find_new_vel(self, obstacles, dt):
+    def find_new_vel(self, neighboring_squares, obstacles, dt):
         """Finds the new velocity given the new acceleration"""
-        new_acc = self.get_acceleration(obstacles, dt)
+        sheep_neighbors = self.get_neighbors_in_sight(neighboring_squares)
+        new_acc = self.get_acceleration(sheep_neighbors, obstacles, dt)
         self.set_new_vel(new_acc, dt)
 
     def obstacle_avoidance(self, obstacle_sheep):
@@ -56,34 +65,50 @@ class Dog(Animal):
         #return o
 
 
-
-    def set_herding_vel(self, right_bound, left_bound, herd_middle_point, radius):
+    def set_herding_vel(self, right_bound, left_bound, adjusted_middle_point, radius, lost_sheep_pos):
         """Sets the herding velocity for the dog. If inside of its bounds, goes towards the arc and end point,
         else goes towards the nearest bound """
-        print("Radius: ", radius)
 
+        if radius < np.linalg.norm(adjusted_middle_point):
+            radius = np.linalg.norm(adjusted_middle_point)
+        if radius < 30:
+            radius = 30
         self.right_bound = self.norm_ang(right_bound)
         self.left_bound = self.norm_ang(left_bound)
-        self.current_herd_middle_point = herd_middle_point
+        self.current_herd_middle_point = adjusted_middle_point
+
+        dog_chasing_ang = (self.norm_ang(right_bound - left_bound))/10
+        lost_sheep_middle_vec = lost_sheep_pos - adjusted_middle_point
+        lost_sheep_ang = self.norm_ang(atan2(lost_sheep_middle_vec[1], lost_sheep_middle_vec[0]))
+
+        self.right_turn_ang = lost_sheep_ang + dog_chasing_ang
+        self.left_turn_ang = lost_sheep_ang - dog_chasing_ang
+
+        #print("Dog at ", self.pos)
+        #print(self.right_turn_ang)
+        #print(self.left_turn_ang)
+        print("Sheep ", lost_sheep_ang)
+        print("dog ", dog_chasing_ang)
+
 
         middle_dog_vec = (self.pos - self.current_herd_middle_point)
         dog_ang = self.norm_ang(atan2(middle_dog_vec[1], middle_dog_vec[0]))
         dog_dist_to_middle = np.linalg.norm(middle_dog_vec)
 
-        bound_point_R = radius * np.array([cos(right_bound), sin(right_bound)]) + herd_middle_point
-        bound_point_L = radius * np.array([cos(left_bound), sin(left_bound)]) + herd_middle_point
+        bound_point_R = radius * np.array([cos(self.right_turn_ang), sin(self.right_turn_ang)]) + adjusted_middle_point
+        bound_point_L = radius * np.array([cos(self.left_turn_ang), sin(self.left_turn_ang)]) + adjusted_middle_point
 
 
-        self.within_bounds = self.is_withing_angles(left_bound, right_bound, dog_ang)
+        self.within_bounds = self.is_withing_angles(self.left_turn_ang, self.right_turn_ang, dog_ang)
 
         if self.within_bounds:
-            move_ang = self.norm_ang(self.give_angle(radius*0.3, radius))
+            move_ang = self.norm_ang(self.give_angle(radius*0.2, radius))
             dir = 1
             if not self.towards_right:
                 dir = -1
 
             target_ang = self.norm_ang(dog_ang + (dir * move_ang))
-            target_point = radius * np.array([cos(target_ang), sin(target_ang)]) + herd_middle_point
+            target_point = radius * np.array([cos(target_ang), sin(target_ang)]) + adjusted_middle_point
 
             herding_vel = target_point - self.pos
 
@@ -126,13 +151,21 @@ class Dog(Animal):
         angle = self.norm_ang(arc_length / radius)
         return angle
 
+    def avoid_sheep(self, sheep_neighbors):
+        a = np.zeros(2)  # separation_steer
+        for neighbor in sheep_neighbors:
+            # if np.linalg.norm(neighbor.pos - agent.pos) < SPACE_R:
+            a -= (neighbor.pos - self.pos) / np.linalg.norm(neighbor.pos - self.pos)
+            # s -= (agent.pos - neighbor.pos)
+        return a
+
     def update(self, the_map, dt):
         super().update(the_map, dt)  # Updates the new position
 
         # Checks if the position is outside of the bounds
         middle_dog_vec = (self.pos - self.current_herd_middle_point)
         dog_ang = self.norm_ang(atan2(middle_dog_vec[1], middle_dog_vec[0]))
-        within_angs = self.is_withing_angles(self.left_bound, self.right_bound, dog_ang)
+        within_angs = self.is_withing_angles(self.left_turn_ang, self.right_turn_ang, dog_ang)
 
         if self.within_bounds and not within_angs:
             self.towards_right = not self.towards_right

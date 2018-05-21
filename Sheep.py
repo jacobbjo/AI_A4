@@ -54,42 +54,6 @@ class Sheep(Animal):
                 near_dogs.append(dog)
         return near_dogs
 
-    def get_neighbors_in_sight(self, neighboring_squares):
-        """ Finds the neighbors in range """
-        neighbors = []
-
-        for square in neighboring_squares:
-            for sheep in square:
-
-                #if np.linalg.norm(sheep.pos - current_sheep.pos) < self.map.sheep_r*2  and not sheep == current_sheep:
-                #    print("SHEEP COLLISION")
-
-                if self.in_range(sheep) and not sheep == self:
-                    neighbors.append(sheep)
-
-        return neighbors
-
-    def in_range(self, sheep_b):
-        """ Checks sheep_b is in range for sheep_a to care about it when moving """
-        sight_range = self.sight_range
-        sight_ang = self.sight_angle
-
-        # The vector between sheep_a and sheep_b
-        vec_ab = sheep_b.pos - self.pos
-
-        if np.linalg.norm(vec_ab) < sight_range:
-
-            sheep_a_ang = atan2(self.dir[1], self.dir[0])
-            vec_ab_ang = atan2(vec_ab[1], vec_ab[0])  # The angle from the x-axis to vec_ab
-
-            # Angles from the x-axis to the boundaries
-            right_ang = sheep_a_ang - sight_ang/2
-            left_ang = sheep_a_ang + sight_ang/2
-
-            return self.is_withing_angles(right_ang, left_ang, vec_ab_ang)
-
-        else:
-            return False
 
     def separation(self, neighbors):
         """

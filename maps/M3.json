@@ -99,9 +99,18 @@
     [
       157,
       -80
+    ],
+    [
+      150,
+      -75
+    ],
+    [
+      150,
+      -75
     ]
+
   ],
-  "sheep_n": 100,
+  "sheep_n": 200,
   "sheep_r": 0.7,
   "sheep_a_max": 30,
   "sheep_v_max": 5,
@@ -112,6 +121,6 @@
   "dog_v_max": 14,
   "dog_sight_ang": 180,
   "dog_sight_range": 5,
-  "dog_chase_arc_ang":180,
+  "dog_chase_arc_ang":200,
   "dt": 0.1
 }
